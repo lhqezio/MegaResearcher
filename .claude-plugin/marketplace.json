@@ -1,0 +1,29 @@
+{
+  "name": "megaresearcher",
+  "owner": {
+    "name": "hoang"
+  },
+  "plugins": [
+    {
+      "name": "megaresearcher",
+      "source": "./",
+      "description": "Research-team-swarm plugin for Claude Code. Spec-driven research workflows: gap-finding, novel hypothesis generation with falsification criteria, adversarial red-team critique. Bundles HF/arxiv/web/GitHub MCP tools and integrates deeply with the superpowers skill library.",
+      "version": "0.1.0",
+      "author": {
+        "name": "hoang"
+      },
+      "license": "Apache-2.0",
+      "keywords": [
+        "research",
+        "agent-swarm",
+        "spec-driven-development",
+        "huggingface",
+        "arxiv",
+        "literature-review",
+        "hypothesis-generation",
+        "red-team",
+        "superpowers-companion"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[project]
+name = "ml-intern-cc"
+version = "0.1.0"
+description = "Claude Code MCP server exposing ml-intern's research tools"
+requires-python = ">=3.11"
+dependencies = [
+  "mcp>=1.2.0",
+  "python-dotenv>=1.0",
+  # ml-intern's tool modules can't be imported in isolation — agent/__init__.py
+  # imports litellm + agent.core.agent_loop, which transitively requires the
+  # full runtime stack. We add ml-intern as a path dep to install everything,
+  # then only call the tool-module handlers from our MCP server. The unused
+  # agent-loop / web-backend deps live in the venv but never execute.
+  "ml-intern",
+]
+
+[tool.uv.sources]
+ml-intern = { path = "../tools/ml-intern", editable = true }

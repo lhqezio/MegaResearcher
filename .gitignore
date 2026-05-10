@@ -1,0 +1,17 @@
+# Secrets
+.env
+.env.local
+mcp/.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.uv/
+
+# OS
+.DS_Store
+
+# We DO commit tools/ml-intern/ — it's the vendored snapshot, that's the point.
+# But we never commit its venv (it doesn't have one in this layout anyway).
+tools/ml-intern/.venv/
