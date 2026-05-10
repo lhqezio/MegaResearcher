@@ -15,7 +15,7 @@ If you (Claude) are about to dispatch the swarm and superpowers is not present, 
 | `research-brainstorming` skill | `brainstorming` |
 | `writing-research-plan` skill | `writing-plans` |
 | `executing-research-plan` skill | `dispatching-parallel-agents` |
-| `research-swarm` orchestrator | `subagent-driven-development` |
+| `executing-research-plan` skill (the orchestrator runs in the main session, not as a subagent — see Architectural note below) | `subagent-driven-development` |
 | `red-team` worker | `receiving-code-review` (adapted for hypotheses) |
 | `eval-designer` + worker code | `test-driven-development` |
 | Any worker that writes code | `requesting-code-review` |
@@ -42,9 +42,15 @@ These are NOT optional. Violating them defeats the plugin's purpose:
 4. **Citations resolve or do not exist.** If `hf_papers paper_details` doesn't return a paper, the paper does not exist for purposes of any MegaResearcher output.
 5. **Workers stay in their lanes.** Literature-scouts produce bibliographies, not hypotheses. Hypothesis-smiths forge hypotheses, not designs. Eval-designers design experiments, not run them. Synthesist synthesizes existing outputs, does not produce new claims.
 
+## Architectural note: the orchestrator is a skill, not a subagent
+
+Claude Code's harness forbids nested agent dispatch — a subagent cannot use the Task tool to spawn other subagents. Therefore the swarm orchestrator (the thing that dispatches workers in waves and runs the critique loop) lives in the `executing-research-plan` **skill**, which executes in the main session and CAN dispatch agents. Worker subagents (literature-scout, gap-finder, hypothesis-smith, red-team, eval-designer, synthesist) are leaves and dispatch nothing further.
+
+There is intentionally no `agents/research-swarm.md`. If you (Claude) see references to a "research-swarm orchestrator subagent" in older docs or commits, ignore them — that pattern was tried and reverted because it broke against the nested-dispatch restriction.
+
 ## Common failure modes and what to do
 
-- **Worker returns without all three required artifacts** (output.md, manifest.yaml, verification.md): orchestrator re-dispatches with explicit instructions about the missing artifact. After 3 retries, escalate.
+- **Worker returns without all three required artifacts** (output.md, manifest.yaml, verification.md): the skill re-dispatches once with explicit instructions about the missing artifact. After one retry, escalate to the user.
 - **All hypotheses killed by red-team**: the gap-finding was likely off, not the hypotheses. Pause and ask the user.
 - **Eval-designer flags an intractable compute budget**: surface to the user; do not silently include intractable experiments in the synthesis.
 - **Pre-flight finds superpowers missing**: refuse to run, point user at install instructions.

@@ -11,11 +11,13 @@
 
 Turn a one-paragraph research question into a **defended research direction**.
 
-MegaResearcher dispatches a swarm of seven specialist subagents — literature scouts, gap-finders, hypothesis-smiths, an adversarial red-team, eval-designers, and a synthesist — and returns a research-direction document containing surviving hypotheses, full experimental designs, falsification criteria, and a transparent audit trail of every idea that was killed and why.
+MegaResearcher dispatches a swarm of six specialist subagents — literature scouts, gap-finders, hypothesis-smiths, an adversarial red-team, eval-designers, and a synthesist — orchestrated by the `executing-research-plan` skill from the main session. The result: a research-direction document with surviving hypotheses, full experimental designs, falsification criteria, and a transparent audit trail of every idea that was killed and why.
 
 ```
                        ┌──────────────────────────────────────────┐
-       Your spec  ───▶ │   research-swarm orchestrator            │ ───▶  output.md
+       Your spec  ───▶ │   executing-research-plan (orchestrator) │ ───▶  output.md
+                       │   runs in the main session, dispatches   │            │
+                       │   workers in waves                       │            │
                        └──────────────────────────────────────────┘            │
                                           │                                    │
               ┌───────────────────────────┼───────────────────────────┐        │
@@ -131,7 +133,7 @@ writing-research-plan    →   produces docs/research/plans/<date>-<topic>-plan.
                               USER REVIEWS + APPROVES
 /research-execute
    ↓
-[research-swarm runs the six phases]
+[executing-research-plan skill runs the six phases]
    ↓
 research-verification    →   evidence-based completion gate
    ↓                          (wraps superpowers:verification-before-completion)
@@ -151,7 +153,7 @@ MegaResearcher hard-depends on the [`superpowers`](https://github.com/obra/super
 | `research-brainstorming`         | `brainstorming`                               |
 | `writing-research-plan`          | `writing-plans`                               |
 | `executing-research-plan`        | `dispatching-parallel-agents`                 |
-| `research-swarm` orchestrator    | `subagent-driven-development`                 |
+| `executing-research-plan` skill (orchestrator-in-main-session) | `subagent-driven-development` |
 | `red-team` worker                | `receiving-code-review` (adapted)             |
 | `eval-designer` + worker code    | `test-driven-development`                     |
 | Any worker that writes code      | `requesting-code-review`                      |
@@ -168,7 +170,7 @@ The result: rigor borrowed from a battle-tested skill library, applied automatic
 | | Count | Names |
 |---|---:|---|
 | **MCP tools** | 9 | `hf_papers`, `hf_inspect_dataset`, `hf_docs_explore`, `hf_docs_fetch`, `hf_repo_files`, `github_examples`, `github_list_repos`, `github_read_file`, `web_search` |
-| **Subagents** | 7 | `research-swarm` + `literature-scout`, `gap-finder`, `hypothesis-smith`, `red-team`, `eval-designer`, `synthesist` |
+| **Subagents** | 6 | `literature-scout`, `gap-finder`, `hypothesis-smith`, `red-team`, `eval-designer`, `synthesist` (orchestration lives in the skill, not a subagent) |
 | **Skills** | 5 | `research-brainstorming`, `writing-research-spec`, `writing-research-plan`, `executing-research-plan`, `research-verification` |
 | **Slash commands** | 3 | `/research-init`, `/research-execute`, `/share-traces` |
 | **Hooks** | 2 | PostToolUse doom-loop detector, SessionEnd transcript uploader |

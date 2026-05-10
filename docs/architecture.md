@@ -15,7 +15,8 @@ This document is for contributors. End-user documentation is in [README.md](../R
                               ↓ invokes
 ┌──────────────────────────────────────────────────────────────────┐
 │ Layer 2: Subagents                                               │
-│   research-swarm (orchestrator)                                  │
+│   executing-research-plan skill (orchestrator, runs in main      │
+│   session — NOT a subagent, see Architectural note in CLAUDE.md) │
 │     ├─ literature-scout (parallel, Phase 1)                      │
 │     ├─ gap-finder       (parallel, Phase 2)                      │
 │     ├─ hypothesis-smith (parallel, Phase 3 + revisions)          │
