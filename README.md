@@ -1,107 +1,283 @@
 # MegaResearcher
 
-A Claude Code plugin for **research-team-swarm** workflows under spec-driven development discipline. Capable of synthesising **novel research directions**: gap-finding, hypothesis generation with falsification criteria, and adversarial red-team critique.
+> A research team in your terminal. Spec-driven. Adversarially critiqued. Hypotheses with falsification criteria. Citations that actually exist.
 
-Built on top of [`huggingface/ml-intern`](https://github.com/huggingface/ml-intern) (HF/arxiv/web/GitHub research tools) and integrating deeply with the [`superpowers`](https://github.com/obra/superpowers) skill library (TDD, planning, verification, parallel agent dispatch).
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-orange)](https://github.com/lhqezio/MegaResearcher)
+[![Built on ml-intern](https://img.shields.io/badge/built%20on-ml--intern-yellow)](https://github.com/huggingface/ml-intern)
+[![Powered by superpowers](https://img.shields.io/badge/powered%20by-superpowers-purple)](https://github.com/obra/superpowers)
 
-## What it does
+---
 
-You start with a research question. MegaResearcher walks you through a five-step spec-driven chain:
+Turn a one-paragraph research question into a **defended research direction**.
+
+MegaResearcher dispatches a swarm of seven specialist subagents — literature scouts, gap-finders, hypothesis-smiths, an adversarial red-team, eval-designers, and a synthesist — and returns a research-direction document containing surviving hypotheses, full experimental designs, falsification criteria, and a transparent audit trail of every idea that was killed and why.
 
 ```
-/research-init  →  research-brainstorming  →  writing-research-spec  →  writing-research-plan  →  /research-execute  →  research-verification
+                       ┌──────────────────────────────────────────┐
+       Your spec  ───▶ │   research-swarm orchestrator            │ ───▶  output.md
+                       └──────────────────────────────────────────┘            │
+                                          │                                    │
+              ┌───────────────────────────┼───────────────────────────┐        │
+              ▼                           ▼                           ▼        │
+        literature-scout            gap-finder                 hypothesis-smith │
+              │                           │                           │        │
+              └───────────┬───────────────┴───────────┬───────────────┘        │
+                          ▼                           ▼                        │
+                       red-team  ◀──── critique loop ─────┐                    │
+                          │                               │                    │
+                          │      revise (cap: 3 rounds)   │                    │
+                          └────▶ hypothesis-smith ────────┘                    │
+                          │                                                    │
+                          ▼ APPROVE                                            │
+                    eval-designer                                              │
+                          │                                                    │
+                          ▼                                                    │
+                     synthesist  ─────────────────────────────────────────────▶┘
 ```
 
-The execution step dispatches a six-phase swarm of specialised subagents:
+---
+
+## Why this is different
+
+|                                          | Just chat with Claude | ml-intern alone | MegaResearcher |
+|------------------------------------------|:--------------------:|:--------------:|:--------------:|
+| Read papers, datasets, code              |          ✓           |       ✓        |       ✓        |
+| Spec-driven workflow with review gates   |          —           |       —        |       ✓        |
+| Parallel specialist agents               |          —           |       —        |       ✓        |
+| Adversarial red-team critique loop       |          —           |       —        |       ✓        |
+| Falsification criteria enforced          |          —           |       —        |       ✓        |
+| Audit trail of rejected ideas            |          —           |       —        |       ✓        |
+| Citations independently re-verified      |          —           |    partial     |       ✓        |
+| Doom-loop detection across the swarm     |          —           |       ✓        |       ✓        |
+
+This isn't "Claude with extra tools." It's a research lab on a chip.
+
+---
+
+## What you actually get
+
+After running `/research-execute` against an approved plan, your project ends up with:
 
 ```
-Phase 1: literature-scout      (parallel, one per sub-topic)
-Phase 2: gap-finder            (parallel over consolidated bibliography)
-Phase 3: hypothesis-smith      (parallel, one per identified gap)
-Phase 4: red-team CRITIQUE LOOP    ← adversarial critique with revision cap
-Phase 5: eval-designer         (parallel, one per surviving hypothesis)
-Phase 6: synthesist            (single, composes final research-direction doc)
+docs/research/
+├── specs/
+│   └── 2026-05-10-multimodal-fusion-spec.md     ← your one-paragraph spec
+├── plans/
+│   └── 2026-05-10-multimodal-fusion-plan.md     ← swarm decomposition
+└── runs/
+    └── 2026-05-10-1430-a3f9b2/
+        ├── output.md                             ← THE deliverable
+        ├── swarm-state.yaml                      ← what happened, when
+        ├── verification-report.md                ← spot-checks + verdict
+        ├── bibliography.md                       ← consolidated Phase 1 output
+        ├── gaps.md                               ← consolidated Phase 2 output
+        ├── literature-scout-1/
+        │   ├── output.md, manifest.yaml, verification.md
+        ├── literature-scout-2/  ...
+        ├── gap-finder-1/  ...
+        ├── hypothesis-smith-1/  (with revision history if red-team kicked back)
+        ├── red-team-1/    (verdict + objections + spot-checks)
+        ├── eval-designer-1/
+        └── ...
 ```
 
-The result is a `docs/research/runs/<run-id>/output.md` containing surviving hypotheses (with mechanism, falsification criteria, and experimental design), a transparent audit trail of rejected hypotheses, and an explicit reflection of what the research deliberately did NOT explore.
+The headline `output.md` is self-contained and proposal-ready. It includes:
 
-## Why the red-team loop matters
+- **Executive summary** — question, novelty target, headline findings, bottom-line recommendation
+- **Surviving hypotheses** — each with mechanism, predicted outcome with magnitude, falsification criteria, and a full experimental design (datasets, baselines, metrics, decision rule, compute budget)
+- **Rejected and killed hypotheses** — with the reasoning that killed each one (mandatory transparency — hidden rejections destroy the swarm's epistemic value)
+- **What we did NOT explore** — explicit reflection of the spec's YAGNI fence
+- **Recommended next actions** — names a specific hypothesis, not "more research is needed"
 
-Plausible-sounding nonsense is the default failure mode of LLM-driven research tools. The red-team worker exists specifically to attack hypotheses with technical rigor — independently re-verifying gap claims, spot-checking citations, attacking mechanisms, and rejecting unfalsifiable hand-waving. Hypotheses must survive the critique loop (or get killed and recorded in the audit trail) before reaching the eval-designer.
+---
 
-This is non-negotiable. The plugin will not let you skip it.
+## The six phases
 
-## Requirements
+```
+Phase 1   literature-scout      parallel, one per sub-topic in the plan
+Phase 2   gap-finder            parallel, partitions the consolidated bibliography
+Phase 3   hypothesis-smith      parallel, one per identified gap
+Phase 4   red-team CRITIQUE     sequential per hypothesis, 3-revision cap
+                                (THIS is where novelty quality gets enforced)
+Phase 5   eval-designer         parallel, one per surviving hypothesis
+Phase 6   synthesist            single, composes the final research-direction doc
+```
 
-- Claude Code with plugin support
-- The [`superpowers`](https://github.com/obra/superpowers) plugin (hard dependency)
-- `uv` (Python package manager)
-- A Hugging Face token (HF_TOKEN) — required for the HF/arxiv tools
-- A GitHub token (GITHUB_TOKEN) — optional; only needed if you want the GitHub code-search tools
+**Phase 4 is the load-bearing one.** Every hypothesis must survive an adversarial critique by an independent agent that:
 
-## Installation
+- Re-runs the literature query and rejects the gap claim if it finds prior work the gap-finder missed
+- Spot-checks at least three citations against the actual papers (`hf_papers paper_details`)
+- Attacks the mechanism step-by-step, demanding citations for every causal claim
+- Steelmans the strongest counter-argument
+- Tests whether the falsification criteria can actually be operationalized into a finite experiment, or whether they're unfalsifiable hand-waving
+- Tags every objection `Critical | Important | Suggestion`
 
-> Marketplace install instructions will go here once the plugin is published. For now, install as a local directory plugin:
+If the hypothesis-smith can't satisfy the red-team in 3 rounds, the hypothesis is escalated to you. If it gets killed entirely, it appears in the audit trail with the lesson it taught — never silently dropped.
+
+---
+
+## The five-step spec-driven chain
+
+```
+/research-init
+   ↓
+research-brainstorming   →   clarifies novelty target, modalities, constraints
+   ↓                          (wraps superpowers:brainstorming)
+writing-research-spec    →   produces docs/research/specs/<date>-<topic>-spec.md
+   ↓                          USER REVIEWS + APPROVES
+writing-research-plan    →   produces docs/research/plans/<date>-<topic>-plan.md
+   ↓                          (wraps superpowers:writing-plans + swarm decomposition)
+                              USER REVIEWS + APPROVES
+/research-execute
+   ↓
+[research-swarm runs the six phases]
+   ↓
+research-verification    →   evidence-based completion gate
+   ↓                          (wraps superpowers:verification-before-completion)
+output.md ready
+```
+
+Three explicit user-approval gates between brainstorm and execute. No silent token-burn.
+
+---
+
+## Deep integration with superpowers
+
+MegaResearcher hard-depends on the [`superpowers`](https://github.com/obra/superpowers) skill library and invokes its skills as runtime primitives:
+
+| MegaResearcher entry             | Invokes superpowers skill                     |
+|----------------------------------|-----------------------------------------------|
+| `research-brainstorming`         | `brainstorming`                               |
+| `writing-research-plan`          | `writing-plans`                               |
+| `executing-research-plan`        | `dispatching-parallel-agents`                 |
+| `research-swarm` orchestrator    | `subagent-driven-development`                 |
+| `red-team` worker                | `receiving-code-review` (adapted)             |
+| `eval-designer` + worker code    | `test-driven-development`                     |
+| Any worker that writes code      | `requesting-code-review`                      |
+| `research-verification`          | `verification-before-completion`              |
+| Parallel baseline experiments    | `using-git-worktrees`                         |
+| Worker hits a bug                | `systematic-debugging`                        |
+
+The result: rigor borrowed from a battle-tested skill library, applied automatically to every research artifact. You don't pick TDD vs. no-TDD per worker; the workers know.
+
+---
+
+## What's bundled
+
+| | Count | Names |
+|---|---:|---|
+| **MCP tools** | 9 | `hf_papers`, `hf_inspect_dataset`, `hf_docs_explore`, `hf_docs_fetch`, `hf_repo_files`, `github_examples`, `github_list_repos`, `github_read_file`, `web_search` |
+| **Subagents** | 7 | `research-swarm` + `literature-scout`, `gap-finder`, `hypothesis-smith`, `red-team`, `eval-designer`, `synthesist` |
+| **Skills** | 5 | `research-brainstorming`, `writing-research-spec`, `writing-research-plan`, `executing-research-plan`, `research-verification` |
+| **Slash commands** | 3 | `/research-init`, `/research-execute`, `/share-traces` |
+| **Hooks** | 2 | PostToolUse doom-loop detector, SessionEnd transcript uploader |
+| **Vendored upstream** | — | [`huggingface/ml-intern`](https://github.com/huggingface/ml-intern), pinned to a known-good SHA |
+
+---
+
+## Quick start
+
+**Requirements:** Claude Code · `uv` · the [`superpowers`](https://github.com/obra/superpowers) plugin · a Hugging Face token
 
 ```bash
+# 1. Clone
 git clone https://github.com/lhqezio/MegaResearcher.git ~/MegaResearcher
-cd ~/MegaResearcher/mcp
-cp .env.example .env
-# Edit .env to add HF_TOKEN (and optionally GITHUB_TOKEN)
-uv sync
+
+# 2. Install MCP server deps
+cd ~/MegaResearcher/mcp && uv sync
+
+# 3. Configure tokens (HF_TOKEN required, GITHUB_TOKEN optional)
+cp .env.example .env && $EDITOR .env
+# Or set them in your shell (~/.zshrc):
+#   export HF_TOKEN="hf_..."
+#   command -v gh >/dev/null && export GITHUB_TOKEN="$(gh auth token)"
+
+# 4. Wire into Claude Code (add to ~/.claude/settings.json)
 ```
 
-Then add MegaResearcher to your Claude Code plugins (path-source install — exact mechanism depends on your CC version).
+```jsonc
+// ~/.claude/settings.json
+{
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "megaresearcher@megaresearcher": true
+  },
+  "extraKnownMarketplaces": {
+    "megaresearcher": {
+      "source": { "source": "directory", "path": "/Users/you/MegaResearcher" }
+    }
+  }
+}
+```
 
-## What you install
+Restart Claude Code. Then in any project:
 
-A single plugin that bundles:
+```
+/research-init multi-modal fusion architectures for ISR
+```
 
-- **9 MCP tools** (research instruments wrapping ml-intern): `hf_papers`, `hf_inspect_dataset`, `hf_docs_explore`, `hf_docs_fetch`, `hf_repo_files`, `github_examples`, `github_list_repos`, `github_read_file`, `web_search`
-- **7 subagents** (1 orchestrator + 6 workers): `research-swarm`, `literature-scout`, `gap-finder`, `hypothesis-smith`, `red-team`, `eval-designer`, `synthesist`
-- **5 skills** (the SDD chain): `research-brainstorming`, `writing-research-spec`, `writing-research-plan`, `executing-research-plan`, `research-verification`
-- **3 slash commands**: `/research-init`, `/research-execute`, `/share-traces`
-- **2 hooks**: PostToolUse doom-loop detector, SessionEnd transcript uploader
-- **A vendored snapshot of ml-intern** (`tools/ml-intern/`) pinned to a known-good SHA
+The brainstorming skill takes over from there.
 
-## What you don't get
-
-- Your API tokens (configure via `mcp/.env`)
-- Your research outputs (those go to your *consuming project's* `docs/research/`, not into the plugin)
-- The superpowers plugin (install separately — required peer dependency)
+---
 
 ## Configuration
 
-Environment variables (set in `mcp/.env` for tools; in your shell for hooks):
+| Variable | Required | Purpose |
+|---|:---:|---|
+| `HF_TOKEN`                    | ✓ | HF API access — papers, datasets, docs, repo files |
+| `GITHUB_TOKEN`                | — | GitHub API access; without it, three GitHub tools surface a clean error |
+| `ML_INTERN_TRACES_REPO`       | — | Set to `<your-hf-username>/ml-intern-sessions` to enable session-trace upload to a private HF dataset |
+| `ML_INTERN_TRACES_PRIVATE`    | — | `true` (default) or `false` for trace dataset visibility |
+| `MEGARESEARCHER_MAX_PARALLEL` | — | Max parallel workers per phase (default 4); higher = faster + more token spend |
 
-| Variable | Required? | Purpose |
-|---|---|---|
-| `HF_TOKEN` | yes | HF API access for paper/dataset/docs/repo tools |
-| `GITHUB_TOKEN` | no | GitHub API access; without it, three GitHub tools error gracefully |
-| `ML_INTERN_TRACES_REPO` | no | If set (`<your-hf-username>/ml-intern-sessions`), session transcripts upload to this private HF dataset on session end |
-| `ML_INTERN_TRACES_PRIVATE` | no | `true` (default) or `false` for trace dataset visibility |
-| `MEGARESEARCHER_MAX_PARALLEL` | no | Max parallel workers per phase (default 4) |
+---
 
 ## Repository layout
 
 ```
 MegaResearcher/
-├── .claude-plugin/plugin.json      # plugin manifest
-├── .mcp.json                       # MCP server registration
-├── agents/                         # 7 subagent definitions
-├── skills/                         # 5 skill definitions
-├── commands/                       # 3 slash commands
-├── hooks/                          # PostToolUse + SessionEnd hooks
-├── mcp/                            # the FastMCP server wrapping ml-intern
-├── tools/ml-intern/                # vendored ml-intern snapshot
-├── docs/                           # plugin documentation
-└── tests/                          # smoke tests
+├── .claude-plugin/
+│   ├── plugin.json                  # plugin manifest
+│   └── marketplace.json             # directory-source marketplace metadata
+├── .mcp.json                        # MCP server registration
+├── agents/                          # 7 subagent definitions (.md each)
+├── skills/                          # 5 skill definitions (one dir each)
+├── commands/                        # 3 slash command definitions
+├── hooks/                           # doom_loop.py + upload_traces.py + hooks.json
+├── mcp/                             # FastMCP server wrapping ml-intern
+│   ├── server.py
+│   ├── pyproject.toml
+│   └── .env.example
+├── tools/ml-intern/                 # vendored snapshot, pinned SHA in tools/ml-intern.sha
+├── docs/architecture.md             # contributor docs
+└── tests/                           # smoke tests for hooks + MCP server
 ```
 
-## Status
+---
 
-v0.1 — initial release. Tested against the DND IDEaS multi-modal AI scoping use case as the first concrete consumer.
+## Design philosophy
+
+**Audit trail is non-negotiable.** Every rejected hypothesis appears in the synthesist's final document with the lesson it taught. Hidden rejections destroy the swarm's epistemic value.
+
+**Citations resolve or do not exist.** Every cited arxiv ID gets validated via `hf_papers paper_details`. No invented citations. Ever.
+
+**Falsification criteria are required.** A hypothesis without a finite experiment that could disprove it is not a hypothesis — it's vibes. The plugin will refuse to advance it.
+
+**Pre-registration of decision rules.** Eval-designers must state in advance what result would constitute support and what would constitute falsification. Post-hoc thresholds are how plausible-but-wrong findings survive.
+
+**Workers stay in their lanes.** Scouts produce bibliographies, smiths forge hypotheses, designers design experiments, the synthesist composes — no role poaches another's job.
+
+---
+
+## Built on
+
+- [**huggingface/ml-intern**](https://github.com/huggingface/ml-intern) — provides the underlying research tools (HF Papers, arxiv, datasets, docs, GitHub code search, web search), the doom-loop detector, and the session-trace upload pipeline. Vendored as a pinned snapshot.
+- [**superpowers**](https://github.com/obra/superpowers) — provides the discipline layer: spec-driven planning, parallel agent dispatch, verification-before-completion, code review patterns. Hard dependency.
+- [**Claude Code**](https://claude.com/claude-code) — the runtime.
+
+---
 
 ## License
 
-Apache-2.0. The vendored `tools/ml-intern/` is also Apache-2.0 (upstream licence preserved).
+Apache-2.0. The vendored `tools/ml-intern/` retains its own Apache-2.0 license — see [`tools/ml-intern/LICENSE`](tools/ml-intern/LICENSE) and [`tools/ml-intern.sha`](tools/ml-intern.sha) for the pinned upstream commit.
