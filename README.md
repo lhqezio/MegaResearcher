@@ -44,7 +44,7 @@ This is non-negotiable. The plugin will not let you skip it.
 > Marketplace install instructions will go here once the plugin is published. For now, install as a local directory plugin:
 
 ```bash
-git clone <this-repo> ~/MegaResearcher
+git clone https://github.com/lhqezio/MegaResearcher.git ~/MegaResearcher
 cd ~/MegaResearcher/mcp
 cp .env.example .env
 # Edit .env to add HF_TOKEN (and optionally GITHUB_TOKEN)
