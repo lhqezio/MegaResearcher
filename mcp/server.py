@@ -94,7 +94,23 @@ mcp = FastMCP("ml-intern")
 
 
 @mcp.tool()
-async def hf_papers(operation: str, **kwargs: Any) -> str:
+async def hf_papers(
+    operation: str,
+    arxiv_id: str | None = None,
+    query: str | None = None,
+    limit: int | None = None,
+    section: str | None = None,
+    sort: str | None = None,
+    sort_by: str | None = None,
+    direction: str | None = None,
+    date: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    categories: list[str] | None = None,
+    min_citations: int | None = None,
+    positive_ids: list[str] | None = None,
+    negative_ids: list[str] | None = None,
+) -> str:
     """Search, read, and explore papers on HF Papers + arXiv + Semantic Scholar.
 
     Operations (from ml-intern's papers_tool):
@@ -102,10 +118,39 @@ async def hf_papers(operation: str, **kwargs: Any) -> str:
       find_datasets, find_models, find_collections, find_all_resources,
       snippet_search, recommend.
 
-    Common kwargs: arxiv_id, query, limit, section_query, sort.
-    Pass-through to upstream handler — see ml-intern source for exact schema.
+    Per-operation kwargs (only relevant ones need to be set):
+      - search:           query, limit, date_from, date_to, categories, min_citations, sort_by
+      - paper_details:    arxiv_id
+      - read_paper:       arxiv_id, section
+      - citation_graph:   arxiv_id, direction, limit
+      - find_datasets:    arxiv_id, sort, limit
+      - find_models:      arxiv_id, sort, limit
+      - find_collections: arxiv_id, limit
+      - find_all_resources: arxiv_id, limit
+      - snippet_search:   arxiv_id, query, limit
+      - recommend:        positive_ids, negative_ids, limit
+      - trending:         date, limit
     """
-    return _unwrap(await hf_papers_handler({"operation": operation, **kwargs}))
+    args: dict[str, Any] = {"operation": operation}
+    for k, v in (
+        ("arxiv_id", arxiv_id),
+        ("query", query),
+        ("limit", limit),
+        ("section", section),
+        ("sort", sort),
+        ("sort_by", sort_by),
+        ("direction", direction),
+        ("date", date),
+        ("date_from", date_from),
+        ("date_to", date_to),
+        ("categories", categories),
+        ("min_citations", min_citations),
+        ("positive_ids", positive_ids),
+        ("negative_ids", negative_ids),
+    ):
+        if v is not None:
+            args[k] = v
+    return _unwrap(await hf_papers_handler(args))
 
 
 @mcp.tool()
