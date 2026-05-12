@@ -16,13 +16,13 @@ Two real runs, committed verbatim. Each directory has the spec the user wrote, t
 
 ## `multimodal-fusion-gap-finding/`
 
-**Question.** Where in the 2024–2026 multi-modal fusion literature for ISR/C2 are the load-bearing gaps that a small team can credibly close to TRL 4–5 in twelve months using only open or synthetic data?
+**Question.** Where in the 2024–2026 multi-modal fusion literature for ISR/C2 are the gaps a small team can credibly close to TRL 4–5 in twelve months using only open or synthetic data?
 
 **Novelty target.** `gap-finding` (literature + gap-finding + synthesis only — no hypothesis / red-team / eval-designer phases)
 
 **Workers fired.** 6 literature-scouts + 3 gap-finders + 1 synthesist = **10 invocations**
 
-**What survived.** 4 load-bearing gaps identified by independent convergence between two gap-finders, plus a third gap-finder that filtered the consolidated literature for TRL-4–5 buildability and produced a ranked eight-candidate shortlist with explicit licence-driven discards. Headline: three top picks spanning three deployment contexts.
+**What survived.** 4 priority gaps identified by independent convergence between two gap-finders, plus a third gap-finder that filtered the consolidated literature for TRL-4–5 buildability and produced a ranked eight-candidate shortlist with explicit licence-driven discards. Headline: three top picks spanning three deployment contexts.
 
 → **[Read the synthesist output](multimodal-fusion-gap-finding/run-2026-05-10-0615-0ece4e/output.md)**
 

@@ -14,7 +14,7 @@ Two real runs are committed in this repo, including spec, plan, every per-worker
 | Topic | Pipeline | What's in the output |
 |---|---|---|
 | **[Recursive reasoning on subquadratic-attention backbones](docs/research/examples/recursive-subquadratic-fusion/run-2026-05-10-0729-766039/output.md)** | Full hypothesis pipeline — 5 scouts + 2 gap-finders + 6 hypothesis-smiths × 2 rounds + 6 red-team × 2 rounds + 5 eval-designers + synthesist (**38 worker invocations**) | 5 surviving hypotheses with mechanism, falsification criteria, and experimental designs; 1 hypothesis killed by red-team and preserved with the reasoning that killed it |
-| **[Multi-modal ISR fusion landscape](docs/research/examples/multimodal-fusion-gap-finding/run-2026-05-10-0615-0ece4e/output.md)** | Gap-finding only — 6 scouts + 3 gap-finders + synthesist (**10 worker invocations**) | 4 load-bearing gaps converged on by independent gap-finders; 8-candidate shortlist with explicit licence-driven discards; 3 top picks spanning 3 deployment contexts |
+| **[Multi-modal ISR fusion landscape](docs/research/examples/multimodal-fusion-gap-finding/run-2026-05-10-0615-0ece4e/output.md)** | Gap-finding only — 6 scouts + 3 gap-finders + synthesist (**10 worker invocations**) | 4 priority gaps converged on by independent gap-finders; 8-candidate shortlist with explicit licence-driven discards; 3 top picks spanning 3 deployment contexts |
 
 [Browse the examples folder](docs/research/examples/) for the full audit trail.
 
