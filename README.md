@@ -122,37 +122,30 @@ MegaResearcher depends on the [`superpowers`](https://github.com/obra/superpower
 
 ## Install
 
-Requirements: Claude Code, `uv`, the [`superpowers`](https://github.com/obra/superpowers) plugin, and a Hugging Face token.
+Requirements: Claude Code, `uv`, and a Hugging Face token. The [`superpowers`](https://github.com/obra/superpowers) plugin will be auto-installed as a dependency.
+
+Inside Claude Code:
+
+```
+/plugin marketplace add lhqezio/MegaResearcher
+/plugin install megaresearcher@megaresearcher
+```
+
+That's it. Set `HF_TOKEN` in your shell before launching Claude Code (get one at https://huggingface.co/settings/tokens):
 
 ```bash
-git clone https://github.com/lhqezio/MegaResearcher.git ~/MegaResearcher
-cd ~/MegaResearcher/mcp && uv sync
-
-cp .env.example .env && $EDITOR .env
-# HF_TOKEN required; GITHUB_TOKEN optional
+export HF_TOKEN=hf_...
+# Optional, only needed for the three GitHub tools:
+export GITHUB_TOKEN=ghp_...   # or: $(gh auth token)
 ```
 
-Wire it into Claude Code in `~/.claude/settings.json`:
-
-```jsonc
-{
-  "enabledPlugins": {
-    "superpowers@claude-plugins-official": true,
-    "megaresearcher@megaresearcher": true
-  },
-  "extraKnownMarketplaces": {
-    "megaresearcher": {
-      "source": { "source": "directory", "path": "/Users/you/MegaResearcher" }
-    }
-  }
-}
-```
-
-Restart Claude Code, then from any project:
+Then from any project:
 
 ```
 /research-init multi-modal fusion architectures for ISR
 ```
+
+The MCP server syncs its Python deps on first invocation via `uv run` — no manual `uv sync` needed.
 
 ## Configuration
 

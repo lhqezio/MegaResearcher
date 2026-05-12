@@ -20,10 +20,14 @@ For the design rationale (vendoring strategy, `sys.path` import, hook layout, te
 
 ## Setup
 
+End users don't need to do anything here — installing the MegaResearcher plugin (`/plugin install megaresearcher@megaresearcher`) makes `.mcp.json` available, and `uv run` syncs the venv on the first tool invocation.
+
+This section is for **contributors hacking on the MCP server itself**.
+
 Requirements: `uv` and Python 3.11+. The vendored ml-intern lives at `../tools/ml-intern/`.
 
 ```bash
-cd "$CLAUDE_PLUGIN_ROOT/mcp"   # or whatever path you cloned MegaResearcher to, then /mcp
+cd /path/to/MegaResearcher/mcp
 uv sync
 
 cp .env.example .env
@@ -33,8 +37,6 @@ cp .env.example .env
 uv run python server.py < /dev/null
 # Waits for MCP stdio; ctrl-C to exit. No error == ready.
 ```
-
-Claude Code picks up `.mcp.json` from the plugin root automatically the next time you open a project with MegaResearcher enabled. The first tool call will prompt you to approve the MCP server.
 
 ## Trace upload (optional)
 

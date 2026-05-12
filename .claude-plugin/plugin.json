@@ -16,5 +16,11 @@
     "hypothesis-generation",
     "red-team",
     "superpowers-companion"
+  ],
+  "dependencies": [
+    {
+      "name": "superpowers",
+      "marketplace": "claude-plugins-official"
+    }
   ]
 }
