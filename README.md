@@ -1,6 +1,6 @@
 # MegaResearcher
 
-A Claude Code plugin that runs a small swarm of research subagents against a research question and produces a defended research direction: hypotheses with falsification criteria, experimental designs, and an audit trail of what got killed and why.
+A Claude Code plugin that runs a small group of research subagents against a research question and produces a research direction document: hypotheses, falsification criteria, experimental designs, and a record of the ideas that were rejected along the way.
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-orange)](https://github.com/lhqezio/MegaResearcher)
@@ -45,11 +45,11 @@ docs/research/
         └── ...
 ```
 
-`output.md` is self-contained. It contains an executive summary, the surviving hypotheses (mechanism, predicted outcome, falsification criteria, experimental design), the killed hypotheses with the reasoning that killed them, an explicit "what we did NOT explore" section reflecting the spec's YAGNI fence, and a recommended next action that names a specific hypothesis.
+`output.md` is self-contained. It includes an executive summary, the surviving hypotheses (mechanism, predicted outcome, falsification criteria, experimental design), the rejected hypotheses with the reasoning behind each rejection, a section listing what the spec's YAGNI fence intentionally left out, and a recommended next action.
 
 ## The red-team loop
 
-This is the part that matters. Every hypothesis has to survive critique from an independent agent that:
+Every hypothesis goes through critique from an independent agent that:
 
 - Re-runs the literature query and rejects the gap claim if it finds prior work the gap-finder missed
 - Spot-checks at least three citations against the actual papers (`hf_papers paper_details`)
@@ -58,7 +58,7 @@ This is the part that matters. Every hypothesis has to survive critique from an 
 - Tests whether the falsification criteria can actually be operationalized
 - Tags each objection `Critical | Important | Suggestion`
 
-If the hypothesis-smith can't satisfy the red-team within 3 rounds, it escalates to you. Killed hypotheses don't disappear — they show up in `output.md` with the lesson they taught.
+If the hypothesis-smith can't satisfy the red-team within 3 rounds, it escalates to you. Rejected hypotheses are recorded in `output.md` along with the reasoning that rejected them.
 
 ## Workflow
 
@@ -80,11 +80,11 @@ research-verification         evidence-based completion gate
 output.md
 ```
 
-Three approval gates between brainstorm and execute, so a swarm run doesn't kick off without you signing off.
+There are three approval gates before execution starts.
 
 ## Built on superpowers
 
-MegaResearcher hard-depends on the [`superpowers`](https://github.com/obra/superpowers) plugin and calls its skills as runtime primitives. If superpowers isn't installed, `executing-research-plan` refuses to run.
+MegaResearcher depends on the [`superpowers`](https://github.com/obra/superpowers) plugin and calls its skills directly. If superpowers isn't installed, `executing-research-plan` will refuse to run.
 
 | MegaResearcher entry             | superpowers skill it invokes        |
 |----------------------------------|-------------------------------------|
@@ -174,15 +174,13 @@ MegaResearcher/
 └── tests/              # smoke tests
 ```
 
-## Discipline rules
+## Rules the workers enforce
 
-These are baked into the workers and the verification skill, not aspirational:
-
-- **Audit trail.** Every killed hypothesis ends up in `output.md` with the reasoning that killed it. No silent rejections.
-- **Citations resolve.** Every cited arxiv ID gets validated via `hf_papers paper_details`. If it doesn't resolve, it doesn't get cited.
-- **Falsification required.** A hypothesis without a finite experiment that could disprove it doesn't get advanced.
-- **Pre-registered decision rules.** Eval-designers state up front what counts as support and what counts as falsification.
-- **Workers stay in their lanes.** Scouts produce bibliographies, smiths forge hypotheses, designers design experiments, the synthesist composes.
+- Every rejected hypothesis is recorded in `output.md` along with the reasoning that rejected it.
+- Cited arxiv IDs are validated via `hf_papers paper_details`. Citations that don't resolve are dropped.
+- Hypotheses without a finite experiment that could disprove them are not advanced.
+- Eval-designers pre-register what result counts as support and what counts as falsification before the experiment is described.
+- Workers don't cross roles: scouts produce bibliographies, smiths produce hypotheses, designers produce experiments, the synthesist composes.
 
 ## Built on
 
