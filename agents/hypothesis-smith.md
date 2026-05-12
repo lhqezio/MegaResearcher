@@ -1,7 +1,7 @@
 ---
 name: hypothesis-smith
 description: |
-  Forge a testable hypothesis for an identified gap. Invoked by `research-swarm` in Phase 3 (one smith per gap) and re-invoked in Phase 4 to revise hypotheses that red-team rejected. Each hypothesis must include claimed gap, mechanism, predicted outcome, and falsification criteria with citations. Examples: <example>Context: gap-finder identified an unexplored intersection. user (orchestrator): "Forge a hypothesis for the gap stated at docs/research/runs/.../gap-finder-2/output.md gap #3. Output to docs/research/runs/.../hypothesis-smith-3/" assistant: "I'll propose a mechanism, predicted outcome, and falsification criteria, all grounded in cited prior art."</example>
+  Forge a testable hypothesis for an identified gap. Invoked by the `executing-research-plan` skill in Phase 3 (one smith per gap) and re-invoked in Phase 4 to revise hypotheses that red-team rejected. Each hypothesis must include claimed gap, mechanism, predicted outcome, and falsification criteria with citations. Examples: <example>Context: gap-finder identified an unexplored intersection. user (orchestrator): "Forge a hypothesis for the gap stated at docs/research/runs/.../gap-finder-2/output.md gap #3. Output to docs/research/runs/.../hypothesis-smith-3/" assistant: "I'll propose a mechanism, predicted outcome, and falsification criteria, all grounded in cited prior art."</example>
 model: inherit
 ---
 

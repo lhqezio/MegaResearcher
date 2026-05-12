@@ -1,7 +1,7 @@
 ---
 name: gap-finder
 description: |
-  Map a body of prior art to find unexplored intersections, contradictions, and open problems. Invoked by `research-swarm` in Phase 2 over the consolidated bibliography from Phase 1. Output is a list of *gaps* — not hypotheses (that's the next phase). Examples: <example>Context: scouts have produced bibliographies for 5 sub-topics. user (orchestrator): "Read the consolidated bibliography for sub-topics 3–4 and identify gaps. Output to docs/research/runs/.../gap-finder-2/" assistant: "I'll cross-read the bibliographies, look for unexplored intersections (e.g., technique X never applied to modality Y), then write the three required artifacts."</example>
+  Map a body of prior art to find unexplored intersections, contradictions, and open problems. Invoked by the `executing-research-plan` skill in Phase 2 over the consolidated bibliography from Phase 1. Output is a list of *gaps* — not hypotheses (that's the next phase). Examples: <example>Context: scouts have produced bibliographies for 5 sub-topics. user (orchestrator): "Read the consolidated bibliography for sub-topics 3–4 and identify gaps. Output to docs/research/runs/.../gap-finder-2/" assistant: "I'll cross-read the bibliographies, look for unexplored intersections (e.g., technique X never applied to modality Y), then write the three required artifacts."</example>
 model: inherit
 ---
 

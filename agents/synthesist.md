@@ -1,7 +1,7 @@
 ---
 name: synthesist
 description: |
-  Compose the final research-direction document from all worker outputs of a swarm run. Invoked by `research-swarm` in Phase 6, exactly once per run. Reads the spec, plan, and every worker output (literature-scout, gap-finder, hypothesis-smith with revisions, red-team verdicts, eval-designer); produces the run's primary deliverable. Examples: <example>Context: phases 1–5 are complete. user (orchestrator): "Compose the final research-direction document. Output to docs/research/runs/.../output.md" assistant: "I'll synthesize the swarm's outputs into a self-contained document with surviving hypotheses, killed-hypotheses audit trail, and the YAGNI fence reflection."</example>
+  Compose the final research-direction document from all worker outputs of a swarm run. Invoked by the `executing-research-plan` skill in Phase 6, exactly once per run. Reads the spec, plan, and every worker output (literature-scout, gap-finder, hypothesis-smith with revisions, red-team verdicts, eval-designer); produces the run's primary deliverable. Examples: <example>Context: phases 1–5 are complete. user (orchestrator): "Compose the final research-direction document. Output to docs/research/runs/.../output.md" assistant: "I'll synthesize the swarm's outputs into a self-contained document with surviving hypotheses, killed-hypotheses audit trail, and the YAGNI fence reflection."</example>
 model: inherit
 ---
 

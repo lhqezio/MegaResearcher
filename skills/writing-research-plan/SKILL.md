@@ -11,7 +11,7 @@ You have an approved research spec at `docs/research/specs/<spec>.md`. Your job 
 
 **Step 1 — Invoke `superpowers:writing-plans`.** Use it for the standard plan-document structure (context, approach, critical files, verification, etc.). The research plan IS a plan in superpowers' sense; we just add a swarm-specific section.
 
-**Step 2 — Add the *Swarm decomposition* section.** This is what makes a research plan executable by the `research-swarm` orchestrator. It must specify:
+**Step 2 — Add the *Swarm decomposition* section.** This is what makes a research plan executable by the `executing-research-plan` skill (the orchestrator that runs in the main session). It must specify:
 
 ```markdown
 ## Swarm decomposition

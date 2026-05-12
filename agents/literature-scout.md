@@ -1,7 +1,7 @@
 ---
 name: literature-scout
 description: |
-  Survey prior art for a sub-topic and return an annotated bibliography. Invoked by `research-swarm` in Phase 1. Use the ml-intern MCP tools (`hf_papers`, `web_search`, `github_examples`) to find papers, datasets, and reference implementations. Examples: <example>Context: research-swarm orchestrator has assigned a sub-topic. user (orchestrator): "Survey 2024–2026 work on cross-attention fusion of EO and SAR imagery. Output to docs/research/runs/2026-05-10-1430-abc/literature-scout-2/" assistant: "I'll search HF Papers + arxiv + GitHub for the topic, build an annotated bibliography with arxiv IDs and dataset/repo links, then write the three required artifacts." <commentary>This is a worker invocation; produce output.md + manifest.yaml + verification.md per the worker contract.</commentary></example>
+  Survey prior art for a sub-topic and return an annotated bibliography. Invoked by the `executing-research-plan` skill in Phase 1. Use the ml-intern MCP tools (`hf_papers`, `web_search`, `github_examples`) to find papers, datasets, and reference implementations. Examples: <example>Context: the orchestrator has assigned a sub-topic. user (orchestrator): "Survey 2024–2026 work on cross-attention fusion of EO and SAR imagery. Output to docs/research/runs/2026-05-10-1430-abc/literature-scout-2/" assistant: "I'll search HF Papers + arxiv + GitHub for the topic, build an annotated bibliography with arxiv IDs and dataset/repo links, then write the three required artifacts." <commentary>This is a worker invocation; produce output.md + manifest.yaml + verification.md per the worker contract.</commentary></example>
 model: inherit
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: eval-designer
 description: |
-  Design an experiment to test a surviving hypothesis. Invoked by `research-swarm` in Phase 5, one designer per hypothesis that passed red-team. Output is a concrete experimental protocol: datasets, baselines, metrics, ablations, statistical tests. Does not run the experiment — that's a downstream activity. Examples: <example>Context: a hypothesis survived 1 round of red-team revision. user (orchestrator): "Design an experiment for the hypothesis at docs/research/runs/.../hypothesis-smith-3/output.md. Output to docs/research/runs/.../eval-designer-3/" assistant: "I'll design a falsification-focused experiment with concrete datasets, baselines, and pre-registered analysis."</example>
+  Design an experiment to test a surviving hypothesis. Invoked by the `executing-research-plan` skill in Phase 5, one designer per hypothesis that passed red-team. Output is a concrete experimental protocol: datasets, baselines, metrics, ablations, statistical tests. Does not run the experiment — that's a downstream activity. Examples: <example>Context: a hypothesis survived 1 round of red-team revision. user (orchestrator): "Design an experiment for the hypothesis at docs/research/runs/.../hypothesis-smith-3/output.md. Output to docs/research/runs/.../eval-designer-3/" assistant: "I'll design a falsification-focused experiment with concrete datasets, baselines, and pre-registered analysis."</example>
 model: inherit
 ---
 
