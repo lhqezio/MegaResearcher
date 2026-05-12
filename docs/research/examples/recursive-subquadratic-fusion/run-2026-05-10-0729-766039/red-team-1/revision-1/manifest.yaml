@@ -1,0 +1,74 @@
+role: red-team
+critiquing: docs/research/runs/2026-05-10-0729-766039/hypothesis-smith-1/revision-1/output.md
+revision_round: 2
+verdict: APPROVE
+critical_count: 0
+important_count: 1
+suggestion_count: 3
+gap_claim_survives: true
+addresses_round_1_objections:
+  - id: RT-1
+    label: NSA citation error (single-pass deficit)
+    severity: CRITICAL
+    status: ADDRESSED
+  - id: RT-2
+    label: Non-additivity isolation (DiD + sign asymmetry + K=1 calibration)
+    severity: CRITICAL
+    status: ADDRESSED
+  - id: RT-3
+    label: F4 inoperable per-iteration logit probe
+    severity: CRITICAL
+    status: ADDRESSED
+  - id: RT-4
+    label: DSA != NSA cheap-path conflation
+    severity: CRITICAL
+    status: ADDRESSED
+  - id: RT-5
+    label: Compute-match confound (FLOP-matched K=1 baseline)
+    severity: CRITICAL
+    status: PARTIALLY_ADDRESSED
+    note: methodology fixed; Ouro citation is mis-specified
+  - id: RT-6
+    label: PLT counter-evidence
+    severity: SERIOUS
+    status: ADDRESSED
+  - id: RT-7
+    label: Tunnel Vision misapplied
+    severity: SERIOUS
+    status: ADDRESSED
+  - id: RT-8
+    label: Magnitude transfer puzzle to text
+    severity: SERIOUS
+    status: ADDRESSED
+  - id: RT-9
+    label: 350M feasibility / noise floor
+    severity: SERIOUS
+    status: ADDRESSED
+  - id: RT-11
+    label: M3 retrieval-head uncited at hinge
+    severity: SERIOUS
+    status: ADDRESSED
+  - id: RT-13
+    label: Sparse Frontier mismatch
+    severity: MINOR
+    status: ADDRESSED
+  - id: RT-10
+    label: Compute over fence
+    severity: MINOR
+    status: ADDRESSED
+  - id: RT-12
+    label: R3 oversells null fallback
+    severity: MINOR
+    status: ADDRESSED
+new_critical_objections: []
+new_important_objections:
+  - id: N1
+    label: Ouro section/Table 5 cited for FLOP-matching protocol that is not in those sections
+    fix: replace Ouro citation with arXiv:2604.21106 (Iso-Depth Scaling Laws) or remove paper anchor; one-line edit
+new_suggestion_objections:
+  - id: N2
+    label: PLT G-SWA mechanism is per-loop dedicated KV, not the same as NSA's compressed-branch cross-iteration channel; "fallback channel" generalization is heterogeneous
+  - id: N3
+    label: F4' Jaccard threshold of 0.10 is uncalibrated against any prior measurement
+  - id: N4
+    label: Central-claim contribution-magnitude drift from rev-0 (acceptable, noted for completeness)

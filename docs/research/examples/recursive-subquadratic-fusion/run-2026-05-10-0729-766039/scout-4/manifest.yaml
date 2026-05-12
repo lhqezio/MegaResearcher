@@ -1,0 +1,73 @@
+role: literature-scout
+worker_id: scout-4
+sub_topic: "Long-context reasoning benchmarks (multi-doc QA, code-repo, agent-trace) and documented failure modes for current long-context LMs."
+papers_count: 37
+n_benchmarks: 21
+n_failure_mode_papers: 16
+benchmarks_count: 21
+datasets_count: 23
+implementations_count: 19
+open_questions_flagged: 10
+
+license_table:
+  - dataset: "RULER (NVIDIA upstream + mirrors)"
+    license: "Apache-2.0"
+  - dataset: "InfiniteBench (∞Bench)"
+    license: "Apache-2.0 (HF dataset); MIT (code repo OpenBMB/InfiniteBench)"
+  - dataset: "LongBench (zai-org/LongBench)"
+    license: "MIT (code repo THUDM/LongBench); HF dataset card lacks explicit license tag — flagged"
+  - dataset: "LongBench-v2 (zai-org/LongBench-v2)"
+    license: "Apache-2.0"
+  - dataset: "HELMET (princeton-nlp/HELMET, chenzizhao/HELMET)"
+    license: "MIT"
+  - dataset: "NoCha (github.com/marzenakrp/nocha)"
+    license: "MIT (code+annotations); novel texts copyrighted, NOT redistributed — flagged"
+  - dataset: "BABILong (RMT-team/babilong)"
+    license: "Apache-2.0 (code+benchmark); upstream PG-19 Apache-2.0; bAbI BSD"
+  - dataset: "Loong (github.com/mozerwang/loong)"
+    license: "Apache-2.0"
+  - dataset: "Michelangelo / LSQ"
+    license: "Closed eval — no public release — flagged"
+  - dataset: "BrowseComp (github.com/openai/simple-evals)"
+    license: "MIT"
+  - dataset: "BrowseComp-Plus (github.com/texttron/BrowseComp-Plus)"
+    license: "License not explicitly verified — flagged"
+  - dataset: "SWE-bench (princeton-nlp/SWE-bench)"
+    license: "MIT (code repo); HF dataset card lacks explicit license tag — flagged"
+  - dataset: "SWE-bench Verified (princeton-nlp/SWE-bench_Verified)"
+    license: "MIT (inherited from upstream); HF dataset card lacks explicit license tag — flagged"
+  - dataset: "SWE-bench Pro (github.com/scaleapi/SWE-bench_Pro-os)"
+    license: "MIT"
+  - dataset: "RepoBench (tianyang/repobench_*)"
+    license: "CC-BY-4.0 (HF tag generic 'cc'; repo card pins CC-BY-4.0)"
+  - dataset: "Long Code Arena (JetBrains-Research/lca-* x6)"
+    license: "Apache-2.0"
+  - dataset: "LiveCodeBench (livecodebench/code_generation_lite)"
+    license: "CC (variant unpinned on HF — flagged)"
+  - dataset: "tau-bench (github.com/sierra-research/tau-bench)"
+    license: "MIT"
+  - dataset: "tau2-bench (github.com/sierra-research/tau2-bench)"
+    license: "MIT"
+  - dataset: "ScienceAgentBench (osunlp/ScienceAgentBench)"
+    license: "CC-BY-4.0 (data) + MIT (code); subset under upstream rasterio/matminer — flagged"
+  - dataset: "AgentBench (github.com/thudm/agentbench)"
+    license: "MIT (assumed from common THUDM repos; verify on use)"
+  - dataset: "NoLiMa (amodaresi/NoLiMa)"
+    license: "Adobe Research License — non-commercial only — FLAGGED"
+  - dataset: "Needle Threading (paper repo)"
+    license: "License not explicitly tagged — flagged"
+  - dataset: "LongIns (paper repo)"
+    license: "License not explicitly tagged — flagged"
+
+benchmarks_unlicensed:
+  - "Michelangelo / Latent Structure Queries (Vodrahalli et al. 2409.12640) — closed Google eval"
+  - "BrowseComp-Plus — license not pinned in primary sources we checked"
+  - "Needle Threading — paper repo license not explicitly stated"
+  - "LongIns — license not explicitly tagged"
+  - "NoLiMa — Adobe Research License (non-commercial only); not OSI-compliant"
+  - "NoCha — code MIT but novel-text data copyrighted (annotations only redistributed)"
+
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (search, paper_details, find_datasets)
+  - mcp__plugin_megaresearcher_ml-intern__web_search
+  - WebFetch (for license verification on GitHub LICENSE files and HF dataset cards)

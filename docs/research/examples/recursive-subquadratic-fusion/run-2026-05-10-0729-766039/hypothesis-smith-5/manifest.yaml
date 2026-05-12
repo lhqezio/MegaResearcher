@@ -1,0 +1,46 @@
+role: hypothesis-smith
+hypothesis_id: H5
+targeting_gap: docs/research/runs/2026-05-10-0729-766039/gap-finder-2/output.md#7
+gap_label: B7 — Tunnel-Vision interactions under fusion (architectural recursion x sparse attention x long-context failure modes)
+revision: 0
+polarity: inherits  # architectural recursion INHERITS Tunnel Vision under sparse attention via spurious fixed-point lock-in
+falsifiable: true
+mechanism_grounded: true
+non_additive_prediction: true  # multiplicative interaction term s x K with positive coefficient exceeding marginal sum
+recursion_vs_cot_distinction_engaged: true  # explicit section in output.md mechanism §3 explaining continuous-latent vs discrete-token lock-in
+falsification_criteria_count: 4
+required_metrics:
+  - lock_in_rate_L:
+      definition: fraction of instances on which K-pass answer is wrong AND stable across K perturbations (attractor-basin probe)
+      threshold: L(0.5, K=8) - L(0.5, K=1) >= +15pp; falsification if max over s of L(s, 8) - L(s, 1) <= +5pp
+      direction: positive, super-linear in K under sparse attention
+  - U_curve_depth:
+      definition: accuracy gap between best end-position and worst mid-position on position-controlled needle stimulus (Lost-in-the-Middle metric)
+      threshold: U(0.5, K=8) - U(0.5, K=1) >= +8pp; falsification if <= 0
+      direction: positive (deepening) under sparse, near-zero or negative under dense
+  - super_linearity_exponent_alpha:
+      definition: exponent in accuracy proportional to N^(-alpha) over multi-needle count N (Hyper-multi-step protocol)
+      threshold: alpha(0.5, K=8) - alpha(0.5, K=1) >= +0.10; falsification if <= +0.02
+      direction: positive growth with K under sparse attention
+  - interaction_coefficient:
+      definition: second-order partial derivative d^2 L / (ds dK) from 2x2 factorial regression
+      threshold: prediction is positive >= +10pp; falsification if 95% CI crosses zero or magnitude < +5pp
+      direction: positive (multiplicative amplification, non-additive)
+sources:
+  - 2510.04871  # TRM
+  - 2601.10679  # HRM mechanistic critique - spurious fixed points
+  - 2509.04475  # ParaThinker / Tunnel Vision
+  - 2307.03172  # Lost in the Middle
+  - 2410.04422  # Hyper-multi-step
+  - 2512.13898  # Score Dilution
+  - 2602.15028  # Long Context Less Focus
+  - 2502.01951  # Position Bias Emergence (graph-theoretic, load-bearing)
+  - 2502.05167  # NoLiMa (license-flagged)
+  - 2502.11089  # NSA
+  - 2504.17768  # Sparse Frontier
+  - 2509.07980  # Parallel-R1
+  - 2412.19707  # Thought Rollback
+  - 2504.07052  # To Backtrack or Not
+license_flags:
+  - 2502.05167: non-commercial; reconstruct license-clean variant, do not redistribute
+asymmetric_value: true  # confirmation reshapes fusion thesis; refutation strengthens it (positive separation result)

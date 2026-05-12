@@ -1,0 +1,76 @@
+role: eval-designer
+hypothesis: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/hypothesis-smith-5/revision-1/output.md
+hypothesis_label: H5-rev1-latent-plateau
+red_team_verdict: APPROVE
+revision: 1
+datasets_count: 5
+datasets:
+  - name: CB2H (Constructed Biographical 2-Hop)
+    hf_id: constructed-in-house
+    license: CC-BY-4.0
+    role: primary-stimulus
+    verified: self-issued
+  - name: BABILong
+    hf_id: RMT-team/babilong
+    license: Apache-2.0
+    role: secondary-OOD-stress
+    verified: hf_inspect_dataset
+  - name: Sudoku-Extreme
+    hf_id: sapientinc/sudoku-extreme
+    license: per-dataset-card
+    role: positive-control
+    verified: hf_inspect_dataset
+  - name: NeedleBench (reference only)
+    hf_id: opencompass/NeedleBench
+    license: Apache-2.0
+    role: methodological-reference
+    verified: hf_inspect_dataset
+  - name: FineWeb-Edu
+    hf_id: HuggingFaceFW/fineweb-edu
+    license: ODC-BY-1.0
+    role: pretraining-corpus-if-needed
+    verified: per-dataset-card
+baselines_count: 5
+baselines:
+  - name: Dense FlashAttention-2 backbone
+    role: prior-art-flash-attention-control
+  - name: NSA backbone
+    role: primary-sparse-prior-art (arXiv:2502.11089)
+  - name: MoBA + Vertical-Slash
+    role: cross-pattern-sparse-prior-art
+  - name: TRM-η=0 frozen-TTT
+    role: ablation-of-proposed-technique
+  - name: Matched-FLOPs CoT
+    role: matched-compute-trivial-baseline
+falsification_experiments_count: 4
+falsification_experiments:
+  - id: F1
+    test: Δ(s=0.5, K=8) ≥ +14.1 pp on CB2H L=32K (recursion HELPS)
+  - id: F2
+    test: Δ(s=0.5, K=8) ≤ -14.1 pp on CB2H L=32K (recursion HURTS / lock-in)
+  - id: F3
+    test: sparse-vs-dense interaction in [-10, +10] pp (no interaction; demoted to secondary per red-team I-B)
+  - id: F4
+    test: Δ_train(K=8) ≤ +13.7 pp on Sudoku-Extreme (positive-control gate; not a H5 falsification)
+plateau_test:
+  method: TOST (Schuirmann 1987; Lakens 2017)
+  equivalence_margin: ±5 pp
+  alpha: 0.0125 (Bonferroni-corrected for primary family of 4)
+  power_at_N_800: 0.65
+  power_disclosed_below_conventional_0.80: true
+sample_sizes:
+  core_cells_per_s_K: 800
+  expanded_grid_per_cell: 200
+  sudoku_positive_control: 1000
+preregistration:
+  margins_locked_before_runs: true
+  stimulus_validation_gate: dense K=1 ≥ 50% at some position
+  k1_stability_gate: K=1 long-context ≥ 30%
+  preflight_check: TRM matched-(T,n) K=1-vs-K=8 on Sudoku ≥ 20pp before locking F4 threshold
+estimated_compute_hours: 9920
+estimated_compute_cost_usd_spot: 30000
+flagged_intractable: false
+cheaper_path_exists: true
+cheaper_path_compute_hours: 2500
+cheaper_path_cost_usd: 8000
+output_dir: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/eval-designer-5

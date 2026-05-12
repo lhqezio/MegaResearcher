@@ -1,0 +1,28 @@
+role: hypothesis-smith
+targeting_gap: docs/research/runs/2026-05-10-0729-766039/gap-finder-1/output.md#gap-2+gap-7;docs/research/runs/2026-05-10-0729-766039/gap-finder-2/output.md#gap-5
+hypothesis_id: H2
+hypothesis_title: TC0 escape via external TRM-style recursion on diagonal SSMs vs Fixed-Point-RNN internal iteration on long-tactic-chain proof search
+revision: 0
+falsifiable: true
+mechanism_grounded: true
+non_additive_prediction: true
+recursion_kind: architectural-external-trm-style
+distinguished_from:
+  - cot_output_recursion: arXiv:2402.12875 cited and explicitly held constant (test-time-sampling fixed across arms)
+  - internal_state_transition_iteration: arXiv:2503.10799 named as comparator arm with mechanistic distinction in section 3
+  - agent_scaffolding: held constant; iteration is in-forward-pass only
+  - test_time_sampling: greedy + beam=4 held constant across arms
+backbones_named:
+  - Mamba arXiv:2312.00752
+  - Mamba-2 arXiv:2405.21060
+  - RWKV-7 Goose arXiv:2503.14456
+  - Fixed-Point-RNN-Mamba arXiv:2503.10799
+benchmarks_named:
+  - PutnamBench arXiv:2407.11214 (Apache-2.0 / MIT)
+  - miniF2F arXiv:2109.00110
+  - CoqGym arXiv:1905.09381
+  - LeanDojo arXiv:2306.15626 (MIT)
+yagni_compliant: true  # no new pretraining, no kernel work, no sparse-attn primitive, no AGI claims; wrapper params only
+cheaper_falsification_path: synthetic S_5 permutation composition probe at variable depth (section 7)
+falsification_criteria_count: 5
+risks_count: 4

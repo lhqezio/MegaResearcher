@@ -1,0 +1,8 @@
+role: eval-designer
+hypothesis: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/hypothesis-smith-3/revision-1/output.md
+red_team_approval: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/red-team-3/revision-1/output.md
+datasets_count: 4  # NoLiMa (primary), RULER (OOD primary), Needle Threading (aux OOD), Synthetic-NIAH-2404.15574 (head-level metric anchor); EverMemBench-S flagged conditional, BABILong listed as fallback
+baselines_count: 7  # B1 G&A, B2 SSA, B3 dense-K=4 (two-pass CoT control), B4 NSA-noCmp ablation (=F6), B5 hidden-state replay, B6 random-text re-feed, B7 K=1 floor
+falsification_experiments_count: 6  # F1, F2 (primary), F3, F3-RULER, F5, F6
+estimated_compute_hours: 1200  # cheap path (post-hoc swap on shared dense backbone); full from-scratch path estimated at 8K-16K H100-hours and is flagged as exceeding the 2000-GPU-hour fence
+flagged_intractable: true  # full from-scratch substrate-training path exceeds fence at 5-seed protocol; cheap path is recommended primary execution

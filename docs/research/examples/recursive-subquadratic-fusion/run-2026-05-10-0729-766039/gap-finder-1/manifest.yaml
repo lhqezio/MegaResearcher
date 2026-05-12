@@ -1,0 +1,63 @@
+role: gap-finder
+worker_id: gap-finder-1
+slice: scout-1 (architectural recursion) + scout-2 (subquadratic / sparse-attention) + scout-3 (state-space / linear-attention backbones)
+slice_focus: architecture-side gaps in the (recursion x subquadratic-backbone) fusion thesis
+n_gaps: 10
+gaps_count: 10
+discarded_count: 4
+gap_titles:
+  - "Gap 1: TRM-style recursion never on natively-trainable sparse attention (NSA/MoBA/DSA/HISA/HSA)"
+  - "Gap 2: TRM-style recursion never on SSM/linear-RNN backbone; Fixed-Point RNN relation unspecified"
+  - "Gap 3: DEQ-style implicit fixed-point never combined with subquadratic operator inside f"
+  - "Gap 4: Per-token halting + per-token sparse routing never jointly trained; halting signal ill-defined under sparsity"
+  - "Gap 5: Looped-Transformers-as-Computer construction sparsity-break-point unmeasured"
+  - "Gap 6: TRM depthwise recursion vs TTT per-token inner-loop never compared/composed"
+  - "Gap 7: External recursion as TC0-escape for diagonal SSMs untested; possibly contradictory with RWKV-7 expressivity claim"
+  - "Gap 8: Retrieval-head behavior under (sparse attention x recursion) never measured"
+  - "Gap 9: DSA indexer hidden O(L^2); no recursive design amortizes routing across loops"
+  - "Gap 10: Four-way distinction (which state object recursion refines) never posed for sub-quadratic substrates"
+load_bearing_papers:
+  - 2510.04871   # TRM (Gaps 1,2,3,5,6,7,8,10)
+  - 2506.21734   # HRM (Gaps 1,3,8,10)
+  - 2502.05171   # Huginn (Gaps 1,6,8,10)
+  - 2510.25741   # Ouro / LoopLM (Gaps 1,8,10)
+  - 2507.10524   # MoR (Gaps 1,4,8,9)
+  - 2502.11089   # NSA (Gaps 1,3,4,5,8)
+  - 2502.13189   # MoBA (Gaps 1,3,4,5)
+  - 2512.02556   # DSA (Gaps 1,3,4,5,9)
+  - 2510.24824   # PLT (Gaps 1,5,8)
+  - 2312.00752   # Mamba (Gaps 2,3,7)
+  - 2503.14456   # RWKV-7 (Gaps 2,7)
+  - 2503.10799   # Fixed-Point RNNs (Gap 2)
+  - 1909.01377   # DEQ (Gap 3)
+  - 2407.04620   # TTT (Gap 6)
+  - 2404.08819   # Illusion of State (Gap 7)
+  - 2412.06148   # Computational Limits SSM via Circuit Complexity (Gap 7)
+  - 2411.12537   # Negative Eigenvalues (Gap 7)
+  - 2404.15574   # Retrieval Head (Gap 8)
+  - 2301.13196   # Looped Transformers as Programmable Computers (Gap 5)
+  - 2007.14062   # BigBird (Gap 5)
+tools_used:
+  - Read (scout-1 / scout-2 / scout-3 outputs are reproduced inline in the assignment)
+  - Bash (directory listing and creation)
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (search) — 8 verification queries
+  - Write (artifact authoring)
+verification_queries_run:
+  - "recursive transformer Mamba state space model architectural recursion"
+  - "looped transformer native sparse attention NSA recursion"
+  - "adaptive halting sparse attention per-token computation"
+  - "DEQ deep equilibrium subquadratic linear attention RWKV"
+  - "TTT test-time training depth recursion looped"
+  - "Fixed-Point RNN linear RNN diagonal dense iteration"
+  - "recursive transformer hybrid SSM Jamba Mamba attention reasoning"
+  - "retrieval head sparse attention long context reasoning"
+  - "looped transformer Mamba state-space recursion depth"
+  - "recursive depth iteration RWKV-7 state-tracking expressivity"
+  - "DEQ deep equilibrium fixed point Mamba SSM linear attention"
+  - "PonderNet ACT halting linear attention RWKV Mamba subquadratic"
+yagni_respected: true
+discarded_candidates:
+  - "Hybrid attention + sparse + linear models — already populated (RWKV-X, ARWKV, BASED, Apriel-H1, Samba, Jamba, Hymba, Griffin/Hawk)"
+  - "Linear attention + iterative training — covered by TTT lineage (2407.04620, 2602.21204, Longhorn 2407.14207)"
+  - "Sparse attention for reasoning — covered by SeerAttention-R, Sparse Frontier, SCBench, Hyper-multi-step"
+  - "Universal Transformer + sparse attention — partially covered by Sparse UT and MoEUT (expert-sparsity); narrowed and folded into Gap 4"

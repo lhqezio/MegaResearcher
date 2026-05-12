@@ -1,0 +1,65 @@
+role: gap-finder
+worker_id: gap-finder-2
+slice: |
+  Architecture × evaluation mismatches. Read scouts 4 (long-context benchmarks +
+  failure modes) and 5 (math/proof/program-synthesis benchmarks + chain-length
+  scaling), cross-referenced against architecture-side scouts 1 (recursion), 2
+  (sparse attention), and 3 (state-space / linear attention) via the headline
+  signals in the consolidated bibliography.
+gaps_count: 9
+discarded_count: 3
+gap_titles:
+  - "BABILong (k-step in haystack) has never been evaluated with TRM-style architectural recursion on a subquadratic backbone"
+  - "Michelangelo / LSQ is the eval most aligned with the recursion claim, yet closed and untested under recursion×SubQ"
+  - "Sparse Frontier task-conditional taxonomy has never been evaluated under chain-length-scaling failure modes"
+  - "NoCha + Loong cleanly separate retrieval from reasoning over the needle, but no SubQ-attention or recursive-arch model uses them"
+  - "PutnamBench / miniF2F / CoqGym (long context × very long tactic chain) has never been evaluated against any SSM/linear-attention model"
+  - "SWE-bench-Verified / SWE-bench-Pro have never been used to test architectural (forward-pass) recursion, only agent scaffolding"
+  - "Tunnel-Vision × Lost-in-the-Middle × Hyper-multi-step interactions have no benchmark that pulls them apart simultaneously under (sparse attention × K_arch)"
+  - "CRUXEval program-loop-depth knob has never been used to measure whether forward-pass recursion K_arch matches program-recursion-depth"
+  - "Retrieval-head retention under (sparse attention × recursion depth) has no published instrument despite mechanism being known"
+benchmarks_unique_to_gaps:
+  - "BABILong (2406.10149)"
+  - "Michelangelo / LSQ (2409.12640)"
+  - "Sparse Frontier task-conditional taxonomy (2504.17768)"
+  - "NoCha (2406.16264)"
+  - "Loong (2406.17419)"
+  - "PutnamBench (2407.11214)"
+  - "miniF2F (2109.00110)"
+  - "CoqGym (1905.09381)"
+  - "LeanDojo retrieval-K (2306.15626)"
+  - "SWE-bench-Verified / SWE-bench-Pro (2509.16941)"
+  - "RepoBench (2306.03091)"
+  - "Long Code Arena (2406.11612)"
+  - "CRUXEval (2401.03065)"
+  - "CRUXEval-X (2408.13001)"
+  - "Retrieval-Head retention (2404.15574)"
+  - "Beyond the Needle's Illusion (2601.20276)"
+  - "Score Dilution at Test Time (2512.13898)"
+arch_components_unique_to_gaps:
+  - "TRM-style architectural recursion (2510.04871)"
+  - "Looped / recursive transformers — Huginn 2502.05171, Ouro/LoopLM 2510.25741, MoR 2507.10524, LoopFormer 2602.11451, PLT 2510.24824, Adaptive Loops 2603.08391, Reasoning with Latent Thoughts 2502.17416, Hyperloop 2604.21254, SCORE 2603.10544"
+  - "Sparse-attention patterns from Sparse Frontier — Vertical-Slash, Block-Sparse, Quest"
+  - "NSA (2502.11089), MoBA (2502.13189), DSA / DeepSeek-V3.2 (2512.02556)"
+  - "Mamba / Mamba-2 hybrid (2406.07887), LongMamba (2504.16053), ReMamba (2408.15496)"
+  - "Linear-attention reasoning models — M1 (2504.10449), Scaling Reasoning without Attention (2505.22425), Thinking Slow Fast (2502.20339)"
+  - "Fixed-Point RNNs (2503.10799) as baseline mathematical-fixed-point recursion"
+  - "Retrieval-head structure (2404.15574); retrieval-aware distillation (2602.11374)"
+tools_used:
+  - "Read (consolidated bibliography + run directory inspection)"
+  - "mcp__plugin_megaresearcher_ml-intern__hf_papers (search) — 8 verification queries"
+verification_queries_run:
+  - "TRM tiny recursive model long context benchmark"
+  - "recursive transformer SWE-bench code repository"
+  - "subquadratic attention chain of thought scaling reasoning length"
+  - "looped transformer BABILong reasoning haystack"
+  - "Mamba SSM linear attention math olympiad PutnamBench Lean proof"
+  - "sparse attention lost in the middle position bias"
+  - "recursion depth axis fixed context length benchmark"
+  - "tunnel vision parallel thinking recursion failure mode"
+  - "Mamba RULER NIAH long context evaluation hybrid"
+  - "CRUXEval recursion depth output execution looped"
+  - "LeanDojo retrieval cutoff K subquadratic state space"
+  - "Hyper-multi-step iterative composition recursion forward pass"
+  - "Mamba math benchmark MATH GSM8K reasoning evaluation"
+  - "retrieval head sparse attention preserve destroy NIAH"

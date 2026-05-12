@@ -1,0 +1,36 @@
+role: hypothesis-smith
+targeting_gap: docs/research/runs/2026-05-10-0729-766039/gap-finder-1/output.md#gap-2-and-gap-7
+revision: 1
+falsifiable: true
+mechanism_grounded: true
+
+# Revision-1 metadata
+addresses_objections:
+  - C1: "FPR misrepresented — dropped contraction-vs-no-contraction structural argument; acknowledged FPR-Mamba solves A_5/S_5 per Fig 4"
+  - C2: "CoT-Solves-Serial over-extrapolated — dropped TC⁰-escape framing; constant-K composition stays in TC⁰"
+  - C3: "Frozen Mamba unprecedented — replaced with Retrofitted Recurrence continued-pretraining recipe (arXiv:2511.07384); all params receive gradients"
+  - C4: "Magnitude calibration speculative — switched to ratio prediction; added mandatory pilot to lock absolute magnitudes"
+  - I1: "Mamba has no Lean pretraining — folded into continued-pretraining + Mathlib fine-tuning protocol (matches Retrofitted Recurrence §4.3.2)"
+  - I2: "F1 statistical underpowering — bin sizes increased to ≥100 L_long, ratio-based threshold, synthetic probe gates main eval"
+  - I3: "F3 fallback narrative — removed; F3 is now a clean falsification with no fallback"
+  - I4: "TRM also attractor-seeking — acknowledged; revised mechanism story makes no expressivity-class claim"
+  - I5: "Param-count confound — F6 added (Llama-3.2 + TRM-style retrofit as substrate control)"
+  - S1: "Adjacent prior art (Retrofitted Recurrence, Think-at-Hard) — engaged with as architectural precedents and baselines"
+
+# Honest weakening notes (per spec instruction allowing sharply-reduced hypothesis)
+hypothesis_weakened: true
+weakening_notes:
+  - "No a priori prediction of which variant (TRM vs FPR) wins; experiment will reveal sign"
+  - "No TC⁰-escape claim; both variants gain expressivity from new parameterization, not from depth-iteration buying TC⁰ escape at constant K"
+  - "Magnitude prediction is now a ratio, not absolute points, calibrated to pilot-measured base rate"
+  - "Synthetic permutation-composition probe (Stage 1) gates Lean compute (Stage 2)"
+
+# Citation health
+new_citations:
+  - arXiv:2511.07384  # Retrofitted Recurrence
+  - arXiv:2511.08577  # Think-at-Hard
+dropped_citation_loads:
+  - arXiv:2402.12875  # CoT-Solves-Serial no longer cited as TC⁰-escape mechanism
+corrected_interpretations:
+  - arXiv:2503.10799  # FPR — contraction is on solver, function class is dense linear RNN; FPR-Mamba solves S_5
+  - arXiv:2510.04871  # TRM — deep supervision is attractor-seeking; not unconstrained

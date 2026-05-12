@@ -1,0 +1,83 @@
+role: hypothesis-smith
+targeting_gap: docs/research/runs/2026-05-10-0729-766039/gap-finder-1/output.md#Gap-4
+revision: 1
+falsifiable: true
+mechanism_grounded: true
+hypothesis_id: H4
+hypothesis_one_liner: >
+  On an NSA backbone with MoR-style per-token expert-choice depth routing,
+  conditioning the depth gate on a *full-attention dropped-mass* proxy
+  (c_{t,k} = ĉ_φ predicting δ(t,k), supervised by occasional full-attention
+  steps; NOT NSA's self-reported coverage) produces a non-additive multi-hop
+  reasoning gain over independent training, because NSA's selection branch
+  suffers a documented Gradient Update Deficiency (SSA arXiv:2511.20102
+  Proposition 4.1) that makes its self-reported coverage structurally
+  optimistic on multi-hop chains spanning ≥3 blocks.
+sparse_pattern_chosen: NSA (2502.11089)
+halting_recipe_chosen: MoR expert-choice routing (2507.10524 §2.2.1)
+coupling_regime_predicted_winner: R2-A (depth gate conditioned on δ-proxy)
+coupling_regime_predicted_loser: R2-self (NSA self-reported coverage; predicted near-null per C1 fix)
+non_additive_prediction: true
+cheaper_falsification_included: true
+falsification_criteria_count: 6  # F-Calib, F1, F2, F3, F4, F-Self-vs-A, F-StopGrad
+red_team_round: 1
+red_team_critical_objections_addressed:
+  - C1_self_justification_of_c_t_k:  fixed via δ-proxy reformulation (c-A) plus explicit miscalibration claim grounded in SSA Prop 4.1
+  - C2_thresholds_at_noise_floor:    fixed via ≥10 seeds, primary benchmark switched to RULER-multi-hop, thresholds raised to ≥1.5 EM, paired bootstrap pre-registered
+  - C3_TRM_PonderNet_recipe_conflation: fixed by committing to MoR expert-choice routing (2507.10524) as the halting recipe
+red_team_important_objections_addressed:
+  - I1_smoke_test_relabeled_as_F_Calib_pre_test
+  - I2_M1_restated_with_three_branch_architecture
+  - I3_F5_R3_ordering_downgraded_to_exploratory_contrast
+  - I4_explicit_tier_gate_added_for_cheaper_path
+  - I5_per_token_PonderNet_terminology_replaced_with_MoR_recipe
+  - I6_F2_NIAH_calibrated_to_60_90_baseline_band
+  - I7_RULER_multi_hop_replaces_MuSiQue_as_primary
+red_team_suggestions_addressed:
+  - S1_M6_Tunnel_Vision_dropped
+  - S2_ReSSFormer_and_Adaptive_Loops_cited_as_adjacent_prior_art
+  - S3_F_Calib_pre_test_now_mandatory_gate
+required_sections_present:
+  - changes_from_revision_0
+  - targeted_gap
+  - hypothesis_statement_if_then
+  - mechanism_with_citations
+  - predicted_outcome_with_magnitude
+  - falsification_criteria
+  - required_experiments
+  - risks
+  - cheaper_falsification_path
+  - sources
+sources_arxiv_ids:
+  - 1603.08983
+  - 1807.03819
+  - 2107.05407
+  - 2310.07096
+  - 2402.16837
+  - 2404.15574
+  - 2405.16039
+  - 2409.12941
+  - 2502.11089
+  - 2502.13189
+  - 2504.17768
+  - 2507.10524
+  - 2510.01585
+  - 2510.04871
+  - 2511.20102
+  - 2512.02556
+  - 2412.10319
+  - 2601.10679
+  - 2602.07150
+  - 2602.08426
+  - 2603.08391
+sources_added_in_revision_1:
+  - 2511.20102  # SSA - C1 fix core
+  - 2510.01585  # ReSSFormer - adjacent prior art
+  - 2603.08391  # Adaptive Loops - adjacent prior art + baseline
+  - 2602.08426  # Prism - c-A regressor features
+  - 2602.07150  # Randomness in Agentic Evals - noise floor
+  - 2409.12941  # FRAMES
+  - 2402.16837  # Latent multi-hop reasoning
+sources_removed_in_revision_1:
+  - 2509.04475  # ParaThinker / Tunnel Vision - M6 dropped
+  - 2602.11451  # LoopFormer - was not load-bearing

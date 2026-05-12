@@ -1,0 +1,83 @@
+role: literature-scout
+worker_id: scout-2
+sub_topic: "Subquadratic and sparse-attention transformers (the formal subquadratic regime + practical sparse methods 2019–2026), treated as a primitive — annotated with sparsity pattern, scaling, and what-is-lost"
+papers_count: 25
+datasets_count: 7
+implementations_count: 14
+open_questions_flagged: 10
+industrial_blog_citations:
+  - url: https://subq.ai/introducing-subq
+    flag: "industrial blog, no peer-reviewed paper, no preprint"
+    claims:
+      - "fully subquadratic architecture / linear in n"
+      - "52x faster than FlashAttention with 63% less compute"
+      - "~1000x attention compute reduction vs. frontier models"
+      - "12M-token research context"
+      - "RULER-128K 95.0; MRCR v2 65.9; SWE-Bench Verified 81.8"
+gaps_observed:
+  - "SubQ sparsity pattern not technically disclosed"
+  - "TRM-style recursion never published on top of NSA/MoBA/DSA"
+  - "Retrieval-head behaviour under sparse attention uncharacterised"
+  - "Gupta et al. dense-subquadratic regime has no architectural instantiation"
+  - "Sparse-Frontier scales context length, not reasoning depth"
+  - "MoBA-vs-NSA: compressed-summary fallback asymmetry unstudied for recursion"
+  - "Alman-Song bounded-entry boundary may move under recursion-induced sharpened softmax"
+  - "No benchmark separates context-length stress from reasoning-depth stress"
+  - "DSA indexer is O(L^2) — hidden quadratic step in 'sparse' pipelines"
+  - "No recursion-on-mamba-vs-recursion-on-sparse comparison"
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers
+  - mcp__plugin_megaresearcher_ml-intern__web_search
+  - mcp__plugin_megaresearcher_ml-intern__github_examples
+  - WebFetch
+key_papers:
+  industrial:
+    - source: subq.ai/introducing-subq
+      flag: industrial-blog
+  theoretical:
+    - 2505.14840  # Gupta-Huang-Saha-Xu-Ye
+    - 2302.13214  # Alman-Song bounded entries
+    - 2402.04497  # Alman-Song gradient
+  classic_sparse:
+    - 1904.10509  # Sparse Transformer
+    - 2004.05150  # Longformer
+    - 2007.14062  # BigBird
+    - 2001.04451  # Reformer
+  modern_native_sparse:
+    - 2502.11089  # NSA
+    - 2502.13189  # MoBA
+    - 2512.02556  # DeepSeek-V3.2 / DSA
+    - 2603.28458  # HISA
+    - 2603.12201  # IndexCache
+    - 2506.08889  # SeerAttention-R
+    - 2410.13276  # SeerAttention
+    - 2511.23319  # HSA / Every Token Counts
+    - 2510.24606  # DHSA
+    - 2604.07394  # Flux Attention
+  inference_sparsity:
+    - 2309.17453  # StreamingLLM
+    - 2406.10774  # Quest
+    - 2306.14048  # H2O
+  prior_art_kernel_lowrank:
+    - 2009.14794  # Performer
+    - 2006.04768  # Linformer
+    - 2307.02486  # LongNet
+  empirical_what_is_lost:
+    - 2504.17768  # Sparse Frontier
+    - 2502.05167  # NoLiMa
+    - 2404.15574  # Retrieval Head
+    - 2410.04422  # Hyper-multi-step
+    - 2412.10319  # SCBench
+    - 2404.06654  # RULER
+  contrast_baseline:
+    - 2312.00752  # Mamba
+  spec_recursion_anchor:
+    - 2510.04871  # TRM (referenced for fusion-thesis context only)
+yagni_fence_respected: true
+notes:
+  - "No CUDA-kernel / FlashAttention-internals / memory-IO content surveyed."
+  - "Linear/kernel approximations included only as prior-art contrast, not as primary fusion candidates."
+  - "Mamba included once as non-attention sub-quadratic baseline; not surveyed in full."
+  - "2505.14840 not retrievable via hf_papers (no HF mirror); fetched via arxiv directly and flagged."
+  - "2302.13214 not on hf_papers; fetched via arxiv directly and flagged."
+  - "2402.04497 not on hf_papers; fetched via arxiv directly and flagged."

@@ -1,0 +1,21 @@
+role: literature-scout
+sub_topic: Cross-cutting capability axes (spatiotemporal alignment, uncertainty propagation, policy-aware provenance, SWaP-aware edge deployment, operator-facing explainability) surveyed across modalities for 2024-2026
+papers_count: 41
+datasets_count: 5
+implementations_count: 6
+open_questions_flagged: 8
+sub_clusters:
+  - name: Spatiotemporal alignment
+    papers: 6
+  - name: Uncertainty propagation and confidence scoring
+    papers: 8
+  - name: Policy-aware fusion / AI provenance / lineage
+    papers: 7
+  - name: SWaP-aware multimodal edge deployment
+    papers: 14
+  - name: Operator-facing explainability
+    papers: 7
+notes:
+  - All papers verified via WebFetch against arxiv.org/abs/<id> due to the documented hf_papers kwargs deserialization bug.
+  - Six papers per sub-cluster floor met for all five sub-clusters (minimum is the spatiotemporal-alignment cluster at 6, well above the contractual floor of 8 across the whole bibliography).
+  - One candidate paper (arXiv:2406.05527) was rejected during verification: WebFetch resolved it to an unrelated condensed-matter physics paper, not the SAR/optical fusion piece returned by the search engine. Excluded from final output per the no-invented-citations rule.

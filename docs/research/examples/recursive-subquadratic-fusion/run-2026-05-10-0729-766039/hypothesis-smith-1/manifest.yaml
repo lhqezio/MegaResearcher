@@ -1,0 +1,108 @@
+role: hypothesis-smith
+worker_id: hypothesis-smith-1
+hypothesis_title: "H1-FB: The Compressed-Summary Fallback is the Pivot of Sparse-Recursion Fusion"
+targeting_gap: "docs/research/runs/2026-05-10-0729-766039/gaps.md#H1"
+revision: 0
+falsifiable: true
+mechanism_grounded: true
+
+claimed_gap_summary: >-
+  The (TRM-style depthwise architectural recursion x natively-trainable
+  learned-routing sparse attention, e.g. NSA / MoBA / DSA) cell of the design
+  grid is empty. Every published recursion paper (TRM 2510.04871, HRM
+  2506.21734, Universal Transformer 1807.03819, Huginn 2502.05171, Ouro
+  2510.25741, MoR 2507.10524) wraps weight-tied iteration around dense softmax
+  attention; every published native-sparse-attention paper (NSA 2502.11089,
+  MoBA 2502.13189, DSA 2512.02556, SeerAttention-R 2506.08889) deploys the
+  sparse operator inside a single-pass decoder. PLT 2510.24824 is the lone
+  partial precedent and uses the simplest fixed-pattern G-SWA, not learned
+  routing, and never analyzes whether tokens dropped in early loops survive
+  into late loops. The asymmetric BABILong 2406.10149 instrument that varies
+  haystack length L and reasoning depth k jointly has never been turned on
+  any architectural-recursion model on a SubQ backbone.
+
+mechanism_summary: >-
+  Architectural recursion (TRM/Huginn/Ouro) iterates a weight-tied transformer
+  block in latent space; iteration t+1's attention is computed from queries
+  refined by iteration t's output. Multi-hop reasoning therefore needs
+  iteration t+1 to attend to evidence iteration t's sparse pattern dropped.
+  NSA preserves a compressed-summary branch over all blocks (selected or
+  not), giving recursion a low-rate global re-look channel; MoBA and DSA
+  apply a hard top-k cutoff with no fallback; iteration t+1 in MoBA/DSA can
+  only revisit dropped blocks via top-k re-selection under a noisy gate. The
+  Tunnel-Vision dynamics of arXiv:2509.04475 and the HRM-fragility analysis
+  of arXiv:2601.10679 predict that without a fallback channel recursion will
+  not just fail to help but actively amplify wrong-path selections from
+  iteration 1. Retrieval-head sparsity (arXiv:2404.15574) is the substrate
+  through which the fallback channel is exploited. The recursion-x-fallback
+  interaction is therefore non-additive: the same recursion operator
+  produces opposite-sign deltas on architectures that differ only in the
+  fallback structure.
+
+predicted_outcome_summary: >-
+  On BABILong (arXiv:2406.10149) qa3+qa4+qa5 at L=64K with K=6 TRM-style
+  recursion vs K=1 baseline at matched parameter count and matched training
+  tokens: NSA-with-fallback shows a +8 to +14 absolute-point recursion lift;
+  NSA-no-fallback shows <=+2 points and possibly negative; MoBA shows <=+2
+  points; dense softmax shows +4 to +7 points (intermediate). The
+  NSA-fallback - MoBA recursion-lift gap is at least +5 points. On RULER
+  single-hop retrieval all variants are near-ceiling and differences vanish;
+  on short-context GSM8K/MBPP recursion lift is uniform at the published TRM
+  level (+5-12) across backbones.
+
+falsification_metric: >-
+  Average accuracy across BABILong qa3+qa4+qa5 subtasks at L=64K, with three
+  decisive thresholds: (F1) NSA-with-fallback K=6 minus K=1 lift; (F2)
+  NSA-with-fallback recursion lift minus MoBA recursion lift; (F3)
+  NSA-with-fallback K=6 minus NSA-no-fallback K=6 (clean compressed-branch
+  ablation, runnable cheaply at inference time on an existing NSA/DSA
+  checkpoint).
+
+falsification_threshold: >-
+  F1: NSA-with-fallback K=6-K=1 lift < +5 absolute points => falsified
+  (predicted >= +8). F2: NSA-fallback lift minus MoBA lift < +2 points =>
+  falsified (predicted >= +5). F3: NSA-fallback K=6 minus NSA-no-fallback
+  K=6 < +1.5 points => falsified, fallback channel is not load-bearing
+  (predicted >= +4). F4 (bonus): MoBA per-iteration accuracy monotone
+  non-decreasing across K=1..6 on qa4 falsifies the tunnel-vision sub-claim.
+
+falsification_direction: >-
+  Direction is below-threshold (lift smaller than predicted, or asymmetry
+  smaller than predicted, or no compressed-branch causal effect). A flipped
+  sign (MoBA shows a larger recursion lift than NSA-with-fallback) is also
+  falsifying for F2.
+
+cited_arxiv_ids:
+  - "2510.04871"  # TRM
+  - "2506.21734"  # HRM
+  - "2601.10679"  # HRM mechanistic critique
+  - "1807.03819"  # Universal Transformer
+  - "2502.05171"  # Huginn
+  - "2510.25741"  # Ouro
+  - "2507.10524"  # MoR
+  - "2510.24824"  # Parallel Loop Transformer
+  - "2502.11089"  # NSA
+  - "2502.13189"  # MoBA
+  - "2512.02556"  # DeepSeek-V3.2 / DSA
+  - "2506.08889"  # SeerAttention-R
+  - "2504.17768"  # Sparse Frontier
+  - "2404.15574"  # Retrieval Head
+  - "2406.10149"  # BABILong
+  - "2406.16264"  # NoCha
+  - "2406.17419"  # Loong
+  - "2509.04475"  # ParaThinker / Tunnel Vision
+
+cheaper_falsification_path_summary: >-
+  Take an open-weights NSA-style checkpoint (e.g., DeepSeek-V3.2 DSA
+  arXiv:2512.02556) and apply TRM-style K=6 weight-tied recursion as an
+  inference-time wrapper on the final transformer block (Huginn-style,
+  arXiv:2502.05171 sec 5). Compare two runtime configs on BABILong
+  qa3+qa4+qa5 at L=32K: (A) compressed branch active; (B) compressed-branch
+  attention logits forced to -inf. Cost ~50 GPU-hours on a single 8xH100
+  node. If accuracy(A) - accuracy(B) >= +3 the fallback hypothesis survives
+  and merits full pre-training; if < +1 the hypothesis is dead before any
+  pre-training run. Caveat: test-time-only recursion on a non-recursion-
+  pre-trained model is a weaker probe (per Ouro), so a null result is
+  suggestive but not conclusive while a positive result is strong evidence.
+
+n_citations: 18

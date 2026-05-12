@@ -1,0 +1,6 @@
+role: literature-scout
+sub_topic: "EO/IR + SAR fusion — cross-attention transformers, joint EO-SAR encoders, contrastive pretraining; spatiotemporal alignment under cloud/night; satellite, airborne, maritime, Arctic ISR application affinity"
+papers_count: 22
+datasets_count: 11
+implementations_count: 12
+open_questions_flagged: 8

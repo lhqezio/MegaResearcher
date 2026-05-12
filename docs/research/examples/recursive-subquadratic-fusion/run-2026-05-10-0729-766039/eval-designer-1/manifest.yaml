@@ -1,0 +1,134 @@
+role: eval-designer
+for_hypothesis: H1
+hypothesis_path: docs/research/runs/2026-05-10-0729-766039/hypothesis-smith-1/revision-1/output.md
+hypothesis_short_name: H1-FB rev-1 (Compressed-Summary Fallback as a sufficient recursion substrate)
+
+datasets:
+  - name: BABILong (full)
+    hf_id: RMT-team/babilong
+    license: Apache-2.0 (CC-BY-3.0 for underlying bAbI tasks)
+    role: primary in-distribution eval (multi-hop, length-controlled)
+  - name: BABILong-1k subsample
+    hf_id: RMT-team/babilong-1k-samples
+    license: Apache-2.0
+    role: primary statistical test set (1000 examples per length × qa cell)
+  - name: RULER NIAH
+    hf_id: simonjegou/ruler
+    license: Apache-2.0
+    role: OOD-1 — single-hop retrieval null-case control
+  - name: GSM8K
+    hf_id: openai/gsm8k
+    license: MIT
+    role: OOD-2a — short-context recursion-only sanity test
+  - name: MBPP (sanitized)
+    hf_id: google-research-datasets/mbpp
+    license: CC-BY-4.0
+    role: OOD-2b — short-context program-synthesis recursion sanity test
+  - name: LongBench (optional supplementary)
+    hf_id: Xnhyacinth/LongBench
+    license: MIT
+    role: OOD supplementary (multi-hop subsets 2WikiMQA, HotpotQA), not a primary falsifier
+  - name: FineWeb-edu
+    hf_id: HuggingFaceFW/fineweb-edu
+    license: ODC-BY-1.0
+    role: pretraining corpus only (not eval)
+
+datasets_count: 7
+
+backbones_treatment:
+  - A1_NSA_fb_K6
+  - A2_NSA_no_fb_K6
+  - A3_MoBA_K6
+  - C2_PLT_GSWA_K6 (consistency arm, N2 mitigation)
+
+backbones_baseline:
+  - B1_NSA_fb_K1_deep_FLOPmatched (parent-architecture prior-art)
+  - B2_NSA_no_fb_K1_deep_FLOPmatched
+  - B3_MoBA_K1_deep_FLOPmatched
+  - B4_Dense_K1_deep_FLOPmatched (strong frontier prior-art)
+  - B5_random_majority (trivial sanity baseline)
+
+baselines_count: 5  # B1, B2, B3, B4, B5 — meets ">=3 baselines (one parent-architecture-only, one strong frontier, one trivial)" requirement
+
+bonus_arms:
+  - C1_DSA_inference_K6 (cheap path B, open weights, ~50 GPU-hours)
+  - C2_PLT_GSWA_K6 (N2 consistency arm)
+
+metrics_primary:
+  - M_primary: BABILong qa3+qa4+qa5 exact-match accuracy at L=64K
+metrics_secondary:
+  - M_sec1_length_sweep
+  - M_sec2_RULER_NIAH
+  - M_sec3_GSM8K_MBPP_recursion_lift
+  - M_sec4_F4prime_Jaccard_drift
+  - M_sec5_per_iteration_attention_entropy
+  - M_sec6_trivial_floor
+
+n_metrics: 7  # 1 primary + 6 secondary
+
+falsification_experiments:
+  - F1: NSA-fb K=6 vs FLOP-matched K=1 lift on BABILong qa3-5 at L=64K
+  - F2: DiD with sign-asymmetry and K=1 calibration (NSA-fb vs MoBA, both K=1 vs K=6)
+  - F3: NSA-fb K=6 vs NSA-no-fb K=6 (compressed-branch causal role)
+  - F4_prime: Jaccard inter-iteration block-selection drift NSA-fb vs MoBA at L=64K (with N3 pilot calibration)
+falsification_experiments_count: 4
+
+ablations:
+  - compressed_branch_zero_train_aware (F3 itself)
+  - inference_time_K_sweep_on_A1
+  - recursion_block_depth_2_vs_4_optional
+  - length_sweep_4K_to_128K (M_sec1)
+  - latent_vs_CoT_distinction_via_Jaccard_and_entropy
+ablations_count: 5
+
+statistical_analysis:
+  pre_registered: true
+  primary_test: hierarchical paired bootstrap (10000 resamples, sample- and seed-clustered)
+  alpha: 0.05 nominal; 0.0125 Bonferroni-corrected across {F1, F2, F3, F4'}
+  effect_size_of_interest_abs_pts: 5.0  # F2 DiD threshold for support
+  assumed_within_seed_sigma: 0.013  # binomial at p=0.5, N=1000
+  assumed_between_seed_sigma: 0.010  # estimated from Pythia-1B / OLMo-1B reproductions
+  combined_sigma_F2_DiD: 0.020
+  seeds_per_arm: 3
+  power_under_predicted_effect_F2: 0.95
+  minimum_detectable_effect_abs_pts: 2.3
+  multiple_comparison: Bonferroni (m=4); FDR not used (pre-specified ordered hypotheses)
+
+compute_estimate:
+  full_experiment_gpu_hours: 1100  # realistic
+  full_experiment_gpu_hours_with_margin: 1395  # 1.25x margin
+  cheaper_falsification_path_A_gpu_hours: 250  # NSA F3 + F4' pilot at 350M, 5B tokens, 2 runs
+  cheaper_falsification_path_B_gpu_hours: 50  # DSA inference-only on V3.2-Exp open weights
+  cheaper_falsification_path_total_gpu_hours: 300
+  total_combined_gpu_hours: 1495  # full + cheap A + cheap B realistic
+  total_combined_gpu_hours_with_slack: 1695
+  hardware: NVIDIA H100 80GB SXM
+  effective_tflops_assumed: 700
+  wall_clock_8x_H100_days_total: 10
+  wall_clock_32x_H100_days_total: 3
+  flagged_intractable: false
+  flagged_intractable_reason: null  # under 2000 GPU-hour fence even with margin
+
+residual_red_team_issues_addressed:
+  N1_Ouro_FLOP_match_citation: replaced with arXiv:2410.20672 (Relaxed Recursive Transformers) and arXiv:2604.21106 (Iso-Depth Scaling Laws); Ouro citations dropped from FLOP-match recipe in §1, §2.2.
+  N2_PLT_mechanism_heterogeneity: added C2 PLT-G-SWA arm as a consistency test; F1-F4' do not depend on it.
+  N3_F4prime_Jaccard_threshold_uncalibrated: added §3.4 pilot-calibration rule using cheap-path-A models; threshold becomes max(0.5×δ, 0.05) or directional fallback.
+  N4_contribution_magnitude_drift: noted as a synthesis-stage concern; no methodological consequence at eval-design level.
+
+cheaper_falsification_path_kill_test_status: PARTIAL
+cheaper_falsification_path_kill_test_notes: |
+  Cheap path A is a *genuine kill-test for F3* (compressed-branch causal role) at 350M scale and an
+  effective *calibration test for F4'* (Jaccard threshold pilot). It is *not* a kill-test for F2 (the central
+  sufficient falsifier) — F2 requires the 1B/L=64K full experiment because (a) MoBA backbone is not in the
+  cheap path, (b) 350M models are at-floor on qa3+qa4+qa5 at L=64K per BABILong arXiv:2406.10149 §3.1.
+  The cheap path therefore functions as a go/no-go on F3 (and as F4' calibration), per the hypothesis's
+  own framing. This is honest — the design does not promise a sub-2000-hour kill-test on F2, because the
+  full F2 falsification (which is the central scientific claim) requires the full 1B experiment, which
+  itself fits within the 2000-hour fence at ~1100-1395 hours. Thus no separate "cheaper falsification of
+  F2" is necessary — the full F2 test is itself in-fence.
+  Cheap path B (DSA inference-only on open weights) is a *bonus consistency check*, not a kill-test.
+
+verification_artifacts_present:
+  - output.md
+  - manifest.yaml
+  - verification.md

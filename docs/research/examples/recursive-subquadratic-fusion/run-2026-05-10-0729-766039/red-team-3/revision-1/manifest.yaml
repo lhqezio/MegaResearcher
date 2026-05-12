@@ -1,0 +1,31 @@
+role: red-team
+critiquing: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/hypothesis-smith-3/revision-1/output.md
+revision_round: 2
+verdict: APPROVE
+critical_count: 0
+important_count: 5
+suggestion_count: 3
+gap_claim_survives: true
+round_1_critical_status:
+  C1_cheap_test_inconsistent_with_mechanism: RESOLVED
+  C2_cross_architecture_retention_metric: RESOLVED
+  C3_quest_contradicts_mechanism: RESOLVED
+  C4_TRM_puzzle_shape_mapping_unspecified: RESOLVED
+  R3_I5_recursion_smearing_not_engaged: RESOLVED
+new_objections_round_2:
+  - I6: Huginn citation partially over-interpreted in R3
+  - I7: Attrieval (2503.09819) is closest published method, not cited
+  - I8: Dreamer (2601.21582) and SpiralFormer (2602.11698) are adjacent prior art, not cited
+  - I9: TRM-style recursion framing partly labelling — operationally two-pass CoT
+  - I10: SSA (2511.20102) is a competing approach, not cited
+  - S6: Fixed-Point RNN extrapolation should be marked as analogy
+  - S7: Cheap test could add a sparsity-ratio sweep axis
+  - S8: SRLM and Recursive Language Models citations still unverified
+key_observations:
+  primary_prediction_change: F1 (absolute monotonicity) demoted to consistency check; F2 (NSA-vs-MoBA differential at K=4 vs K=1) promoted to primary
+  novelty_assessment: narrower than original but defensible and mechanism-grounded
+  load_bearing_falsification: F2 (differential) plus F6 (compression-branch ablation)
+  steelman_unblocked: routing-quality confound (MoBA's gate is suboptimal per FlashMoBA paper) — F6 is the disambiguator
+verification_complete: true
+gap_re_verified_with: 5 independent literature queries (Q6-Q10)
+citations_spot_checked: 4 (Huginn 2502.05171, Fixed-Point RNNs 2503.10799, TRM 2510.04871, Attrieval 2503.09819)

@@ -1,0 +1,14 @@
+role: eval-designer
+hypothesis: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/hypothesis-smith-4/revision-1/output.md
+datasets_count: 6
+baselines_count: 5
+falsification_experiments_count: 7
+estimated_compute_hours: 44200
+flagged_intractable: true
+notes:
+  - "Maximalist 130-cell ladder is flagged_intractable; cheapest staged path (Stages 0+0.5+2) is ~1050 H100-hours = ~$3150."
+  - "Stage-3 from-scratch core (5 cells × 10 seeds) is ~17000 H100-hours, gated on Stage-2 R2-A − R1 ≥ 0.5 EM."
+  - "F-Calib pre-experiment gate (Stage 0) can falsify the hypothesis at ~100 H100-hours."
+  - "F-Calib threshold is anchored to a HotpotQA pilot (red-team I5 fix), not a chosen number."
+  - "RULER VT @32K must be generated locally via NVIDIA's official generator (Apache-2.0) — simonjegou/ruler mirror only ships up to 16K."
+  - "Holm-Bonferroni correction across {F1, F2, F3, F4, F-Self vs A}; F-Calib (gate) and F-StopGrad (TOST equivalence) treated as separate families."

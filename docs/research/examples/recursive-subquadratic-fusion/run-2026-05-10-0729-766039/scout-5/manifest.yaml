@@ -1,0 +1,112 @@
+role: literature-scout
+worker_id: scout-5
+sub_topic: "Math / formal proof / program synthesis benchmarks where reasoning-chain depth is the binding constraint AND long input context is typically required, plus 2024-2026 chain-length-scaling literature."
+papers_count: 32
+n_benchmarks_by_category:
+  math: 8                  # PutnamBench, miniF2F, FrontierMath, Omni-MATH, OlympiadBench, HARP, MathArena, MATH-500
+  formal_proof: 7          # LeanDojo, ProofNet, CoqGym, Goedel-Prover V1+V2, DeepSeek-Prover-V2, BFS-Prover-V2, FormalMATH
+  program_synthesis: 8     # BigCodeBench, CRUXEval, LiveCodeBench, LiveCodeBench Pro, SWE-bench/Verified, Multi-SWE-bench, AlphaCode/CodeContests, APPS
+n_chain_length_papers: 9   # Inverse Scaling TTC, When More Is Less, Effective Reasoning / FSF, Through the Valley, Thinking-Optimal Scaling, L1/LCPO, Don't Overthink, s1, InftyThink
+datasets_count: 19
+implementations_count: 25
+open_questions_flagged: 7
+
+license_table:
+  apache_2_0:
+    - PutnamBench (Lean4 / Isabelle parts)
+    - miniF2F (Lean / Isabelle parts)
+    - Omni-MATH
+    - OlympiadBench
+    - BigCodeBench
+    - Multi-SWE-bench
+    - FormalMATH
+    - Goedel-Prover datasets
+    - AlphaCode CodeContests (Apache-2.0 in code_contests repo)
+    - LeanDojo content (Mathlib4 inheritance)
+  mit:
+    - HARP
+    - SWE-bench / SWE-bench Verified (upstream repo)
+    - LiveCodeBench (per repo)
+    - APPS
+    - PutnamBench (Coq part)
+    - miniF2F (Metamath part)
+    - ProofNet
+    - CoqGym
+    - LeanDojo code
+    - MATH (parent of MATH-500; upstream)
+  permissive_other_or_mixed:
+    - miniF2F (HOL Light = FreeBSD)
+  closed_or_gated:
+    - FrontierMath  # Epoch AI gated; not redistributed
+  unspecified_on_hf_card_flag:
+    - MATH-500 (HF dataset card lacks explicit license; upstream MATH is MIT)
+    - LeanDojo HF mirror tasksource/leandojo (canonical license is MIT code + Apache-2.0 Mathlib content)
+    - princeton-nlp/SWE-bench_Verified (HF card visible content does not show licence; upstream repo MIT)
+    - MathArena (platform-specific, no static dataset license)
+    - HARP (no canonical HF dataset; license MIT in GitHub repo)
+
+benchmarks_unlicensed:
+  - FrontierMath          # gated, not openly licensed
+  - MathArena             # platform, no dataset license
+
+chain_length_x_context_length_papers:  # papers explicitly varying both axes
+  - 2503.06692  # InftyThink (iterative summarize-continue; central plot is total CoT × per-iter context)
+  - 2310.06770  # SWE-bench (oracle vs full-repo retrieval lets you separate context length from chain length)
+  - 2306.15626  # LeanDojo (retrieval-K is an explicit context-length knob holding chain length distribution roughly fixed)
+  - 2406.15877  # BigCodeBench (Hard split varies spec length and step count jointly)
+  # NOTE: this list is small — most chain-length-scaling work holds context tiny; most long-context benchmarks hold chain depth small.
+
+architectures_studied_in_chain_length_literature:
+  dense_transformer_LLMs:
+    - Qwen 2.5 / 3 family
+    - LLaMA 3
+    - Gemma 3
+    - DeepSeek V3 / R1
+    - Claude (3.7 / 4)
+    - OpenAI o-series (o1, o3, o3-mini, o4-mini)
+  subquadratic_attention_models_studied: []   # NONE found in any chain-length-scaling paper surveyed
+  recursive_iterative_compute:
+    - InftyThink (prompt-level iterative; closest analogue, not architectural)
+    - DeepSeek-Prover-V2 (recursive subgoal decomposition; structural analogue at the proof-search layer)
+    - BFS-Prover-V2 (multi-agent tree search with planner; also operational, not architectural)
+
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (operations: search, paper_details)
+  - mcp__plugin_megaresearcher_ml-intern__web_search
+  - WebFetch (HF dataset cards + GitHub READMEs for license verification)
+  - ToolSearch (to load deferred tool schemas)
+
+verification:
+  arxiv_ids_spot_checked_via_paper_details:
+    - 2407.11214  # PutnamBench
+    - 2306.15626  # LeanDojo
+    - 2411.04872  # FrontierMath
+    - 2410.07985  # Omni-MATH
+    - 2402.14008  # OlympiadBench
+    - 2412.08819  # HARP
+    - 2406.15877  # BigCodeBench
+    - 2401.03065  # CRUXEval
+    - 2403.07974  # LiveCodeBench
+    - 2310.06770  # SWE-bench
+    - 2504.02605  # Multi-SWE-bench
+    - 2507.14417  # Inverse Scaling TTC
+    - 2502.07266  # When More Is Less
+    - 2509.19284  # Effective Reasoning / FSF
+    - 2506.07712  # Through the Valley
+    - 2502.18080  # Thinking-Optimal Scaling
+    - 2503.04697  # L1 / LCPO
+    - 2502.07640  # Goedel-Prover
+    - 2509.06493  # BFS-Prover-V2
+    - 2302.12433  # ProofNet
+    - 2109.00110  # miniF2F
+    - 2505.23281  # MathArena
+    - 2505.04528  # Beyond Theorem Proving
+    - 2505.02735  # FormalMATH
+    - 2506.11928  # LiveCodeBench Pro
+  invented_citations: 0
+  benchmarks_with_verified_license: 19   # see license_table above; FrontierMath and MathArena are flagged
+  bibliography_floor_met: true            # 32 entries vs floor of 8
+
+distinguishing_cot_text_from_architectural_recursion: true
+# Every chain-length-scaling entry above describes CoT-as-text-output; only TRM (2510.04871, the spec's reference)
+# implements true compute-graph recursion. Open-question #1 in output.md flags the gap explicitly.

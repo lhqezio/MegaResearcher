@@ -1,0 +1,38 @@
+role: gap-finder
+slice: modality-pair-gaps (all six scout outputs scout-1..scout-6, full)
+gaps_count: 10
+discarded_count: 5
+verification_tool: mcp__ml-intern__web_search + WebFetch (mcp__ml-intern__hf_papers blocked by parameter-deserialization bug, documented per spec workaround)
+output_path: /Users/ggix/ND-Challenge/docs/research/runs/2026-05-10-0615-0ece4e/gap-finder-1/
+artifacts:
+  - output.md
+  - manifest.yaml
+  - verification.md
+modality_pairs_evaluated:
+  - EO/IR + SAR
+  - EO/IR + text-intel
+  - EO/IR + RF/SIGINT
+  - EO/IR + audio
+  - EO/IR + telemetry
+  - EO/IR + sonar
+  - SAR + text-intel
+  - SAR + RF/SIGINT
+  - SAR + audio
+  - SAR + sonar
+  - SAR + telemetry
+  - RF/SIGINT + audio
+  - RF/SIGINT + text-intel
+  - RF/SIGINT + telemetry
+  - audio + telemetry
+  - audio + sonar
+  - sonar + AIS
+  - sonar + EO/IR + AIS (maritime tri-modal)
+  - sonar + RF + visual + AIS (maritime quad-modal)
+  - EO/IR + SAR + AIS (dark-vessel)
+  - text-intel + event-streams + EO/IR (joint forecasting)
+capability_dimensions_scored:
+  - spatiotemporal alignment
+  - uncertainty propagation
+  - policy-aware provenance
+  - SWaP-aware edge deployment
+  - operator explainability

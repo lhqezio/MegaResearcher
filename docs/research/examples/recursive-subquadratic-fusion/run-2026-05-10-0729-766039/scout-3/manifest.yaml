@@ -1,0 +1,126 @@
+role: literature-scout
+worker_id: scout-3
+sub_topic: "State-space and linear-attention subquadratic backbones — state mechanisms, reasoning-depth limits, and prior combinations with iterative/recursive heads"
+n_entries: 31
+papers_count: 31
+datasets_count: 10
+implementations_count: 14
+open_questions_flagged: 10
+
+key_papers:
+  foundational_backbones:
+    - arxiv: "2312.00752"
+      name: "Mamba"
+    - arxiv: "2405.21060"
+      name: "Mamba-2 / SSD"
+    - arxiv: "2603.15569"
+      name: "Mamba-3"
+    - arxiv: "2305.13048"
+      name: "RWKV-4"
+    - arxiv: "2404.05892"
+      name: "RWKV-5/6 Eagle/Finch"
+    - arxiv: "2503.14456"
+      name: "RWKV-7 Goose"
+    - arxiv: "2307.08621"
+      name: "RetNet"
+    - arxiv: "2302.10866"
+      name: "Hyena"
+    - arxiv: "2306.15794"
+      name: "HyenaDNA"
+    - arxiv: "2402.18668"
+      name: "BASED"
+    - arxiv: "2312.06635"
+      name: "GLA"
+    - arxiv: "2406.06484"
+      name: "DeltaNet"
+    - arxiv: "2407.14207"
+      name: "Longhorn"
+    - arxiv: "2407.04620"
+      name: "TTT layers"
+  hybrids:
+    - arxiv: "2403.19887"
+      name: "Jamba"
+    - arxiv: "2405.16712"
+      name: "Zamba"
+    - arxiv: "2411.13676"
+      name: "Hymba"
+    - arxiv: "2406.07522"
+      name: "Samba"
+    - arxiv: "2402.19427"
+      name: "Griffin/Hawk"
+    - arxiv: "2510.04800"
+      name: "Hybrid Architectures Systematic Analysis"
+  reasoning_on_subquadratic:
+    - arxiv: "2504.10449"
+      name: "M1"
+    - arxiv: "2505.22425"
+      name: "Scaling Reasoning without Attention"
+    - arxiv: "2502.20339"
+      name: "Thinking Slow, Fast"
+  architectural_recursion:
+    - arxiv: "1807.03819"
+      name: "Universal Transformers"
+    - arxiv: "2502.17416"
+      name: "Reasoning with Latent Thoughts (Looped Transformers)"
+    - arxiv: "2510.25741"
+      name: "LoopLM"
+    - arxiv: "2510.04871"
+      name: "TRM (the fusion-thesis target)"
+    - arxiv: "2510.14961"
+      name: "Parallel Samplers for Recurrent-Depth Models"
+    - arxiv: "2203.07852"
+      name: "Block-Recurrent Transformers"
+    - arxiv: "2304.11062"
+      name: "RMT"
+
+state_tracking_limit_papers:
+  - arxiv: "2404.08819"
+    name: "The Illusion of State in State-Space Models (Merrill, Petty, Sabharwal)"
+  - arxiv: "2412.06148"
+    name: "Computational Limits of SSMs and Mamba via Circuit Complexity"
+  - arxiv: "2411.12537"
+    name: "Unlocking State-Tracking in Linear RNNs Through Negative Eigenvalues"
+  - arxiv: "2412.19350"
+    name: "On the Expressiveness and Length Generalization of Selective SSMs on Regular Languages"
+  - arxiv: "2410.03810"
+    name: "Can Mamba Always Enjoy the Free Lunch?"
+
+recursive_head_combinations_found:
+  - arxiv: "2503.10799"
+    name: "Fixed-Point RNNs"
+    note: "K iterations of a diagonal linear RNN as fixed-point convergence to a dense linear RNN — closest existing work to architectural recursion on a linear-RNN backbone, but recursion is mathematical fixed-point, not TRM-style learned-operator iteration."
+  - arxiv: "2407.04620"
+    name: "TTT layers"
+    note: "Hidden state IS a learnable model with a per-token inner optimisation step — recursion is along the sequence (one inner step per token), not depthwise."
+  - arxiv: "2405.16712"
+    name: "Zamba"
+    note: "A single shared attention module is reused at multiple positions — share-and-reuse is structurally analogous to weight-tied recursion but only one application per call, not iterated K times."
+  - arxiv: "2504.10449"
+    name: "M1 (Mamba reasoning model)"
+    note: "Achieves test-time-compute via long sequence-time CoT on a Mamba backbone — not architectural recursion in the forward pass, but the closest existing 'reasoning on SSM' system."
+  - arxiv: "2505.22425"
+    name: "Scaling Reasoning without Attention"
+    note: "Pure-SSD reasoning model; recursion implicit in long output CoT, not architectural."
+  - arxiv: "2304.11062"
+    name: "Recurrent Memory Transformer (RMT)"
+    note: "Segment-level recursion via memory tokens — different recursion granularity than TRM but informative for what state recursion can preserve in a long-context Transformer."
+
+# Note: Of the 31 surveyed papers, no work was found that combines *TRM-style architectural recursion*
+# (a learned operator iterated K times over a latent thought in the forward pass) with an SSM or
+# linear-attention backbone. The list above documents adjacent constructions, not direct hits.
+
+gaps_observed:
+  - "No literal product of TRM-style architectural recursion x SSM backbone exists in the surveyed literature."
+  - "All hard-reasoning results on subquadratic backbones (M1, Scaling-Reasoning-without-Attention, Thinking-Slow-Fast) achieve depth via sequence-time CoT, never via depth-time architectural recursion."
+  - "State-tracking-limit papers all use synthetic FSAs / regular languages; empirical bite on math/proof/program-synthesis at scale is undercharacterised."
+  - "Fixed-Point RNNs (2503.10799) is the closest construction; the formal relationship between fixed-point recursion and TRM-style learned-operator recursion is not established in the surveyed literature."
+  - "The fusion thesis is silent on *which state object* recursion refines (SSM hidden state, memory tokens, input embeddings, separate latent); existing recursion papers all target the input/latent of an attention block."
+  - "Hyena/Hyena-DNA (long-conv, no state) raises the question of whether stateless subquadratic backbones are even valid recursion targets — none of the surveyed work attempts this."
+  - "RWKV-7 claims to lift the TC^0 ceiling at the backbone level; if true it competes with rather than complements architectural recursion. Surveyed literature does not directly compare."
+  - "Hybrid-Architecture-Systematic-Analysis (2510.04800) is the most recent design map but does not include any recursion variants in its design space."
+
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (operations: search, paper_details, find_datasets, find_models)
+  - mcp__plugin_megaresearcher_ml-intern__web_search (not invoked — hf_papers coverage was sufficient)
+  - mcp__plugin_megaresearcher_ml-intern__github_examples (not invoked — implementations surfaced via paper_details GitHub field)
+  - WebFetch (not invoked — sources resolved via hf_papers)

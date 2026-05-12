@@ -1,0 +1,33 @@
+run_id: 2026-05-10-0615-0ece4e
+spec: docs/research/specs/2026-05-10-multimodal-fusion-gap-finding-spec.md
+plan: docs/research/plans/2026-05-10-multimodal-fusion-gap-finding-plan.md
+novelty_target: gap-finding
+max_parallel: 4
+phases:
+  phase_1_literature_scout:
+    status: dispatching
+    workers:
+      - scout-1: pending  # EO/IR + SAR fusion
+      - scout-2: pending  # RF / SIGINT fused with imagery or text
+      - scout-3: pending  # Audio + video + sensor fusion at edge
+      - scout-4: pending  # Text intel fused with sensor or imagery
+      - scout-5: pending  # Sonar + maritime multi-modal anomaly
+      - scout-6: pending  # Cross-cutting capability axes
+  phase_2_gap_finder:
+    status: idle
+    workers:
+      - gap-finder-1: pending  # Modality-pair gaps
+      - gap-finder-2: pending  # Capability gaps
+      - gap-finder-3: pending  # TRL-buildability filter
+  phase_3_hypothesis_smith:
+    status: idle_for_run
+  phase_4_red_team:
+    status: idle_for_run
+  phase_5_eval_designer:
+    status: idle_for_run
+  phase_6_synthesist:
+    status: idle
+    workers:
+      - synthesist: pending
+escalations: []
+retry_counts: {}

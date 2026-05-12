@@ -1,0 +1,6 @@
+role: literature-scout
+sub_topic: RF / SIGINT fused with imagery or text intel (2024-2026); RadioML-derived backbones, spectrogram-image alignment, RF + VLM integration, RF + telemetry / RF + EO multi-sensor fusion
+papers_count: 25
+datasets_count: 8
+implementations_count: 12
+open_questions_flagged: 9

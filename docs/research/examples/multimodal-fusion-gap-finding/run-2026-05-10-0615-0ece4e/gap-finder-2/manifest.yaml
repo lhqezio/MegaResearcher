@@ -1,0 +1,4 @@
+role: gap-finder
+slice: capability-axis gaps across all six scout outputs (scout-1 EO/SAR, scout-2 RF/SIGINT, scout-3 tactical-edge wearable, scout-4 text intel, scout-5 sonar/maritime, scout-6 cross-cutting capability — primary)
+gaps_count: 8
+discarded_count: 4

@@ -1,0 +1,44 @@
+role: hypothesis-smith
+targeting_gap: docs/research/runs/2026-05-10-0729-766039/gap-finder-1/output.md#Gap-4
+revision: 0
+falsifiable: true
+mechanism_grounded: true
+hypothesis_id: H4
+hypothesis_one_liner: >
+  Coverage-conditioned per-token PonderNet halting (R2) on an NSA backbone in a
+  TRM-style recursive forward pass produces a non-additive multi-hop reasoning
+  improvement over independent training (R1), no-halting fixed-K (R0), and
+  shared-router coupling (R3); the effect should vanish on single-hop NIAH.
+sparse_pattern_chosen: NSA (2502.11089)
+coupling_regime_predicted_winner: R2 (halting conditioned on routing-pattern coverage)
+coupling_regime_predicted_loser: R3 (shared-router) — predicted to underperform R2
+non_additive_prediction: true
+cheaper_falsification_included: true
+falsification_criteria_count: 5
+required_sections_present:
+  - targeted_gap
+  - hypothesis_statement_if_then
+  - mechanism_with_citations
+  - predicted_outcome_with_magnitude
+  - falsification_criteria
+  - required_experiments
+  - risks
+  - cheaper_falsification_path
+  - sources
+sources_arxiv_ids:
+  - 2510.04871
+  - 1603.08983
+  - 2107.05407
+  - 1807.03819
+  - 2507.10524
+  - 2602.11451
+  - 2502.11089
+  - 2502.13189
+  - 2512.02556
+  - 2310.07096
+  - 2405.16039
+  - 2404.15574
+  - 2412.10319
+  - 2504.17768
+  - 2509.04475
+  - 2601.10679

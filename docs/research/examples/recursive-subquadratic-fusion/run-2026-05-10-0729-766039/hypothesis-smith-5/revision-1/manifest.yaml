@@ -1,0 +1,17 @@
+role: hypothesis-smith
+targeting_gap: docs/research/runs/2026-05-10-0729-766039/gap-finder-2/output.md#7
+revision: 1
+falsifiable: true
+mechanism_grounded: true
+polarity_flipped_from_revision_0: true
+polarity_revision_0: "architectural recursion INHERITS Tunnel Vision under sparse (lock-in)"
+polarity_revision_1: "architectural recursion ESCAPES Tunnel Vision but exhibits LATENT PLATEAU under sparse on long-context OOD"
+red_team_critical_addressed: [C1, C2, C3]
+red_team_important_addressed: [I1, I2, I3, I4, I5, I6]
+red_team_suggestions_adopted: [S1, S4]
+red_team_suggestions_partial: [S2, S3]
+new_citations_added:
+  - "2604.12946"  # Parcae - load-bearing for M1
+  - "2601.18401"  # Superlinear Multi-Step Attention - engaged in section 1
+  - "2507.02199"  # Huginn - load-bearing empirical evidence for M1
+  - "2407.11963"  # BABILong/InfBench - license-clean biographical-template paradigm

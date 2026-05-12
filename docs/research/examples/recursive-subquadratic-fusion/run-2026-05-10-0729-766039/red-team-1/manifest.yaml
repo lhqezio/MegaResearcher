@@ -1,0 +1,62 @@
+role: red-team
+worker_id: red-team-1
+hypothesis_id: H1-FB
+critiquing: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/hypothesis-smith-1/output.md
+revision_round: 1
+verdict: REJECT
+n_objections:
+  critical: 5
+  serious: 6
+  minor: 3
+critical_count: 5
+important_count: 6
+suggestion_count: 3
+gap_claim_survives: true
+citation_compliance_check: FAIL
+  detail: |
+    Multiple citation issues:
+    - NSA Tab. 1 misrepresented (NSA outperforms dense, not loses 1 point)
+    - DSA conflated with NSA structurally for cheap-path F3
+    - Sparse Frontier (2504.17768) does not actually include NSA/MoBA
+    - ParaThinker Tunnel Vision is sequential-CoT, not architectural recursion
+    - M3 retrieval-head-in-compressed-branch claim is uncited
+falsifiability_check: FAIL
+  detail: |
+    F1/F2 do not isolate non-additive interaction (additive model satisfies them).
+    F4 logit-probing is not operationalizable in proposed architecture.
+    F3 cheap path tests a different hypothesis than the full pre-training claim
+    and depends on a non-existent NSA reference checkpoint.
+    Noise floor not specified; +8 threshold not calibrated.
+arch_coherence_check: PARTIAL
+  detail: |
+    The hypothesis is structurally coherent at first order, but the M2 mechanism
+    relies on the compressed branch carrying fact-specific information that M3
+    presumes retrieval heads can exploit. The compressed branch is computed once
+    per layer (not per iteration); the "second look channel" is via attention
+    weights only. This is one step from incoherent if compressed-branch info is
+    position-prior rather than content.
+recursion_sense_check: FAIL
+  detail: |
+    K=1 vs K=6 are not FLOP-matched in the proposed design (recursion block runs
+    6 times in K=6, once in K=1). Conflates "recursion specifically" with "more
+    compute under sparse attention." This is the exact confound the spec's
+    recursion-vs-CoT distinction is meant to prevent.
+scale_plausibility_check: FAIL
+  detail: |
+    3,800 GPU-hours exceeds 2,000 GPU-hour fence.
+    Cheap path F3 tests a different hypothesis (test-time recursion).
+    No NSA reference checkpoint is publicly released; only zen-E/NSA-1B (104
+    downloads, community) exists. F3 requires architecture-equivalence claim
+    that does not hold (DSA != NSA).
+    BABILong qa3-5 at L=64K may be at floor for 350M models, making +8 abs
+    points unmeasurable.
+non_additivity_check: FAIL
+  detail: |
+    F1/F2/F3 test joint outcomes consistent with the additive-marginals
+    explanation: NSA K=1 > MoBA K=1, both backbones gain similarly from
+    recursion (PLT data supports this for sliding-window). The hypothesis
+    does not require non-additivity to satisfy its falsification criteria.
+    Steelman: The K=1 NSA vs MoBA gap is the entire effect; recursion gains
+    are backbone-agnostic. F2 satisfied, hypothesis "confirmed," but the
+    central claim (non-additivity from compressed-branch fallback) is
+    unsupported.

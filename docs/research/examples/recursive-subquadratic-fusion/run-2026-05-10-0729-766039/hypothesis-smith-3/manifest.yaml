@@ -1,0 +1,18 @@
+role: hypothesis-smith
+hypothesis_id: H3
+targeting_gap: docs/research/runs/2026-05-10-0729-766039/gap-finder-2/output.md#9
+targeting_gap_alias: docs/research/runs/2026-05-10-0729-766039/gap-finder-1/output.md#Gap-8
+composition: A8 + B9
+revision: 0
+falsifiable: true
+mechanism_grounded: true
+non_additive: true
+architectural_coherence_respected: true
+information_path_explicit: true
+cheaper_falsification_path_included: true
+license_flags:
+  - NoLiMa (arXiv:2502.05167) — non-commercial license; flagged in spec
+  - NoCha (arXiv:2406.16264) — code MIT, novels copyrighted; not used in this hypothesis
+primary_metric: retrieval-head retention score (arXiv:2404.15574 §2 method)
+falsification_count: 3 (F1 monotonicity, F2 NSA-vs-MoBA differential, F3 task transfer; F4 mechanism check is optional)
+yagni_compliant: true  # no training, no kernel, post-hoc swap allowed for cheap falsification

@@ -1,0 +1,166 @@
+run_id: 2026-05-10-0729-766039
+spec: docs/research/specs/2026-05-10-recursive-subquadratic-fusion-spec.md
+plan: docs/research/plans/2026-05-10-recursive-subquadratic-fusion-plan.md
+novelty_target: hypothesis
+max_parallel: 4
+phases:
+  phase_1_literature_scout:
+    status: complete
+    workers:
+      - id: scout-1
+        sub_topic: architectural-recursion-iterative-depth
+        status: complete
+        verification: PASS
+        n_entries: 32
+      - id: scout-2
+        sub_topic: subquadratic-sparse-attention-and-formal-regime
+        status: complete
+        verification: PASS
+        n_entries: 26
+        industrial_blog_citations: [SubQ]
+      - id: scout-3
+        sub_topic: ssm-and-linear-attention-backbones
+        status: complete
+        verification: PASS
+        n_entries: 31
+      - id: scout-4
+        sub_topic: long-context-reasoning-benchmarks-and-failure-modes
+        status: complete
+        verification: PASS
+        n_entries: 37
+      - id: scout-5
+        sub_topic: math-proof-program-synthesis-benchmarks
+        status: complete
+        verification: PASS
+        n_entries: 32
+  phase_2_gap_finder:
+    status: complete
+    workers:
+      - id: gap-finder-1
+        slice: scout-1+scout-2+scout-3
+        focus: architecture-side-gaps
+        status: complete
+        verification: PASS
+        n_gaps: 10
+      - id: gap-finder-2
+        slice: scout-4+scout-5+xref-1-2-3
+        focus: architecture-x-evaluation-mismatches
+        status: complete
+        verification: PASS
+        n_gaps: 9
+  phase_3_hypothesis_smith:
+    status: in_progress
+    workers:
+      - id: hypothesis-smith-1
+        title: Sparse-fusion-lift
+        composes_gaps: [A1, B1, B4]
+        status: pending
+      - id: hypothesis-smith-2
+        title: TC0-escape-via-recursion-on-SSMs
+        composes_gaps: [A2, A7, B5]
+        status: pending
+      - id: hypothesis-smith-3
+        title: Retrieval-head-re-formation
+        composes_gaps: [A8, B9]
+        status: pending
+      - id: hypothesis-smith-4
+        title: Joint-halting-x-sparse-routing
+        composes_gaps: [A4]
+        status: pending
+      - id: hypothesis-smith-5
+        title: Tunnel-Vision-under-fusion
+        composes_gaps: [B7]
+        status: pending
+      - id: hypothesis-smith-6
+        title: TRM-vs-TTT-depthwise-vs-sequence-time
+        composes_gaps: [A6, B8]
+        status: pending
+  phase_4_red_team:
+    status: complete
+    round_1_results:
+      - hypothesis: H1
+        verdict: REJECT_revision_1
+      - hypothesis: H2
+        verdict: REJECT_revision_1
+      - hypothesis: H3
+        verdict: REJECT_revision_1
+      - hypothesis: H4
+        verdict: REJECT_revision_1
+      - hypothesis: H5
+        verdict: REJECT_revision_1
+      - hypothesis: H6
+        verdict: REJECT_revision_1
+    round_2_results:
+      - hypothesis: H1
+        verdict: APPROVE
+        survived: true
+      - hypothesis: H2
+        verdict: REJECT_revision_2
+        survived: false
+        escalated: true
+        escalation_reason: "Repeated citation/precedent error — mechanism story relies on papers that do not establish what is claimed. After two rounds, central architectural distinction (TRM-vs-FPR) was retracted as factually wrong (round 1) and replacement training-recipe precedent (Retrofitted Recurrence) was misrepresented (round 2). Continuing into round 3 with high probability of similar shape of error. Decision: escalate per cap-3 rule and proceed with 5 surviving hypotheses (well above spec's ≥3 minimum)."
+      - hypothesis: H3
+        verdict: APPROVE
+        survived: true
+      - hypothesis: H4
+        verdict: APPROVE
+        survived: true
+      - hypothesis: H5
+        verdict: APPROVE
+        survived: true
+        polarity_flipped: true
+      - hypothesis: H6
+        verdict: APPROVE
+        survived: true
+        mechanism_pivoted: true
+    surviving_hypotheses: [H1, H3, H4, H5, H6]
+    killed_hypotheses: [H2]
+    workers: []
+  phase_5_eval_designer:
+    status: complete
+    workers:
+      - id: eval-designer-1
+        for_hypothesis: H1
+        status: complete
+        flagged_intractable: false
+        full_gpu_hours: 1395
+        cheap_path_gpu_hours: 300
+      - id: eval-designer-3
+        for_hypothesis: H3
+        status: complete
+        flagged_intractable: true
+        flagged_reason: "Maximalist scope (8K-16K GPU-hours from-scratch substrate training) exceeds 2000-hour fence; recommended primary execution path is the in-fence cheap-path at ~1200 GPU-hours (post-hoc swap on dense backbone)"
+        full_gpu_hours: 16000
+        cheap_path_gpu_hours: 1200
+      - id: eval-designer-4
+        for_hypothesis: H4
+        status: complete
+        flagged_intractable: true
+        flagged_reason: "Maximalist 130-cell ladder = 44,200 H100-hours; staged execution cheap-path = ~1050 GPU-hours preserves load-bearing falsifiers"
+        full_gpu_hours: 44200
+        cheap_path_gpu_hours: 1050
+      - id: eval-designer-5
+        for_hypothesis: H5
+        status: complete
+        flagged_intractable: false
+        full_gpu_hours: 9920
+        cheap_path_gpu_hours: 2500
+      - id: eval-designer-6
+        for_hypothesis: H6
+        status: complete
+        flagged_intractable: true
+        flagged_reason: "Phase A+B+C escalation = 8,336 GPU-hours over fence; cheap-path-A 150 GPU-hours is in-fence but not sufficient for the predicted r=0.33 vs threshold 0.5 distinction"
+        full_gpu_hours: 8336
+        cheap_path_gpu_hours: 150
+    note: "3 of 5 designs flagged intractable at maximalist scope. All 5 provide feasible cheaper-falsification paths. ED-3, ED-4, ED-6 explicitly recommend executing the cheap path as primary."
+  phase_6_synthesist:
+    status: pending
+    workers:
+      - id: synthesist
+        status: pending
+escalations:
+  - id: H2
+    title: TC0-escape-via-recursion-on-SSMs
+    rounds: 2
+    reason: "Hypothesis depends on novel architectural distinction (TRM-style vs Fixed-Point-RNN-style recursion on SSMs) for which prior-art precedents repeatedly fail close reading. Round 1 retracted FPR contraction-bound and CoT-Solves-Serial claims. Round 2 misrepresented Retrofitted Recurrence as TRM-style precedent. Pattern of citation/precedent shape errors. Killed for audit-trail; spec already met with 5 surviving."
+retry_counts: {}

@@ -1,0 +1,128 @@
+role: hypothesis-smith
+worker_id: hypothesis-smith-6
+hypothesis_title: "H6-SUB (revision-1): TRM Depthwise Recursion and TTT Sequence-time Recursion are Sub-additive Substitutes — TRM K_arch-gain on a TTT Backbone is Compressed Relative to Non-TTT Controls"
+targeting_gap: "docs/research/runs/2026-05-10-0729-766039/gap-finder-1/output.md#Gap-6"
+revision: 1
+falsifiable: true
+mechanism_grounded: true
+
+revision_notes: >-
+  Pivoted from H6-VAR (destructive interference, variance-amplifying middle band)
+  to H6-SUB (sub-additive redundancy, compressed K_arch-gain on TTT backbone)
+  in response to red-team round-1 critique. C1 forced the pivot: arXiv:2602.21204
+  §4.1-4.4 directly contradicts the memorization-based M3a/M3b mechanism that
+  revision-0 used. The new mechanism is grounded in arXiv:2602.21204 §5.1-5.2's
+  own positive finding (TTT is a learned linear-attention operator). C2 forced
+  the metric pivot from second-moment (across-seed std) to first-moment (mean
+  ratios), and the test surface upgrade from CRUXEval-O (800 items) to
+  CRUXEval-X (15K items × 19 languages). C3 specified architecture:
+  inner-loop fast weights reset to W_0 between outer iterations (TRM-faithful).
+  I1-I5 all addressed in the "Changes from revision-0" section.
+
+claimed_gap_summary: >-
+  Two distinct internalized-computation axes exist for sub-quadratic backbones —
+  sequence-time inner-loop recursion (TTT 2407.04620, LaCT 2505.23884, TTT-as-
+  linear-attention 2602.21204, One-Minute Video TTT 2504.05298, Longhorn
+  2407.14207) and depth-time outer-loop recursion (TRM 2510.04871, HRM
+  2506.21734, Huginn 2502.05171, Ouro 2510.25741, MoR 2507.10524, Latent
+  Thoughts 2502.17416, Looped 2311.12424). Gap-finder-1 verified via
+  hf_papers search no published work instantiates them jointly, ablates one
+  against the other, or characterizes whether stacking is redundant,
+  complementary, or destructive. Red-team round-1 re-verified the gap with
+  four independent queries (post-cutoff candidates SR-TTT 2603.06642 and
+  In-Place TTT 2604.06169 do not compose depth recursion with TTT). The gap
+  survives. CRUXEval-X (2408.13001) with per-instance program-recursion-depth
+  is the primary test surface; the structural-recursion baseline (2401.12947)
+  gives the dense reference point.
+
+mechanism_summary: >-
+  Grounded in arXiv:2602.21204 §5.1-5.2 (re-verified by reading via
+  hf_papers read_paper). M1: TTT layers induce a learned linear-attention
+  operator with effective q̂ = ϕ_{t+1}(q), k̂ = ϕ_t(k), v̂ = g_t(k) per
+  Theorem 5.1; the inner-loop hyperparameters (step count, η) determine which
+  attention operator is induced. M2: TRM (2510.04871 §4.5) Table 1 shows
+  TRM's depth-recursion *substitutes for* self-attention (87.4% no-attention
+  vs 74.7% with-attention). M3: when TRM wraps a TTT backbone, both axes are
+  iteratively refining the same learned-linear-attention operator — TTT's
+  inner loop sets the operator's per-token shape; TRM's outer loop iterates
+  the same operator with refined (y, z) inputs. Because both operate on the
+  same effective object, the K_arch-gain on a TTT backbone is compressed
+  relative to non-TTT backbones (Mamba, dense softmax, frozen-η=0 TTT) where
+  TRM's outer iteration is genuinely-novel. M4: η=0 frozen TTT (≡ static
+  linear-attention per Theorem 5.1 corollary) isolates the "learned-operator-
+  iteration property" — if it shows full TRM gains like Mamba/dense, M3 is
+  supported. M5: CRUXEval-X (2408.13001) at d≥3 is the right surface for the
+  load-bearing means-comparison; CoT-helpful sub-split (2401.03065 §5)
+  releases the redundancy.
+
+predicted_outcome_summary: >-
+  CRUXEval-X (15K × 19 languages) at fixed program-recursion-depth d ≥ 3,
+  no-CoT, 125M matched-param backbones, ≥5 seeds per cell. ΔA_TTT-Linear(K=4
+  − K=1) ≤ 0.5 × min(ΔA_dense, ΔA_Mamba, ΔA_η=0). Predicted ΔA_TTT ≈ +2 abs
+  pts vs ΔA_dense ≈ +6, ΔA_Mamba ≈ +5, ΔA_η=0 ≈ +5. K_arch=4 mean accuracy
+  on trained-TTT and frozen-η=0-TTT converges within ±1.5 abs pts. Effect
+  vanishes at d=1 and under text-CoT. LaCT replicates the compression. The
+  load-bearing prediction is FIRST-MOMENT (mean ratios), not second-moment
+  (variance), addressing red-team C2 statistical-power critique.
+
+falsification_metric: >-
+  Five decisive criteria, all on CRUXEval-X exact-match accuracy at d ≥ 3,
+  no-CoT, ≥5 seeds: (F1) compression ratio r = ΔA_TTT(K=4)/max(ΔA_other(K=4));
+  (F2) TTT-to-η=0 convergence at K=4; (F3) CoT-confound control — text-CoT
+  releases the redundancy; (F4) depth-axis specificity — compression grows
+  with d; (F5) LaCT replicates compression.
+
+falsification_threshold: >-
+  F1: r > 0.5 ⇒ falsified (predicted r ≈ 0.33).
+  F2: |A_TTT(K=4) − A_η=0(K=4)| > 1.5 abs pts ⇒ falsified.
+  F3: r_CoT − r_no-CoT < +0.2 ⇒ falsified (predicted ≥+0.37).
+  F4: r_d=1 < 0.7 OR r_d≥3 ≥ r_d=1 ⇒ falsified.
+  F5: ΔA_LaCT(K=4) − ΔA_TTT-Linear(K=4) > +2.0 abs pts ⇒ falsified.
+
+falsification_direction: >-
+  F1, F2, F5 are above-threshold-falsifies. F3 is below-threshold-or-sign-flip.
+  F4 is bound-violation. The hypothesis lives or dies on the FIRST moment
+  (mean accuracy ratios) at high item-count CRUXEval-X — addresses red-team
+  C2 statistical-vacuity critique. Pre-registered sample-size analysis (§5a)
+  shows binomial+seed-noise floor on r is ~0.15-0.28; well-separated from
+  the 0.5/0.33 falsification boundary.
+
+architecture_specification: >-
+  PRIMARY: inner TTT fast weights W_t reset to W_0 between outer TRM
+  iterations (TRM-faithful — TRM repeats f_L on a fresh (z_L+z_H+x) input
+  each iteration; nothing in TRM's recipe persists internal sequence-time
+  state per iteration). ABLATION: persist W_t from iteration k as initial
+  W_0 of iteration k+1 (theoretically interesting, replicates 2602.21204
+  §4.1's "more inner-loop steps" sweep at training time; runs only at
+  K_arch=4, single-seed × 4 backbones).
+
+cited_arxiv_ids:
+  - "2510.04871"  # TRM
+  - "2506.21734"  # HRM
+  - "2502.05171"  # Huginn
+  - "2510.25741"  # Ouro
+  - "2507.10524"  # MoR
+  - "2502.17416"  # Reasoning with Latent Thoughts
+  - "2311.12424"  # Looped Transformers Better at Learning Algorithms
+  - "2410.01405"  # Expressive Power of Looped Transformers
+  - "2407.04620"  # TTT
+  - "2505.23884"  # LaCT / TTT Done Right
+  - "2602.21204"  # TTT-as-linear-attention (load-bearing in revised mechanism)
+  - "2504.05298"  # One-Minute Video TTT
+  - "2407.14207"  # Longhorn
+  - "2401.03065"  # CRUXEval
+  - "2408.13001"  # CRUXEval-X (PRIMARY test surface in revision-1)
+  - "2401.12947"  # Structural Recursion negative baseline
+
+cheaper_falsification_path_summary: >-
+  Fine-tune (not just test-time wrap, addressing red-team S1) TRM-style
+  K_arch ∈ {1, 4} weight-tied wrapper on the final two blocks of pre-trained
+  TTT-Linear/LaCT/Mamba/dense checkpoints for 2B tokens with deep
+  supervision. Three seeds per cell. Evaluate ΔA_TTT(K=4 − K=1) vs
+  ΔA_dense(K=4 − K=1) on CRUXEval-X at d=3. Cost ≈120 GPU-hours on one
+  8×H100 node. Kill-switch: if ΔA_TTT(K=4) ≥ 0.7 × ΔA_dense(K=4), the sub-
+  additive saturation prediction is dead and §6 full-pre-training is aborted.
+
+n_citations: 16
+addressed_red_team_round: 1
+red_team_critique_path: "docs/research/runs/2026-05-10-0729-766039/red-team-6/output.md"

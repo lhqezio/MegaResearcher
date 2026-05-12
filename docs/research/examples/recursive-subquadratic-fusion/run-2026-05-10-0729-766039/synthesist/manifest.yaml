@@ -1,0 +1,36 @@
+role: synthesist
+run_id: 2026-05-10-0729-766039
+spec: docs/research/specs/2026-05-10-recursive-subquadratic-fusion-spec.md
+plan: docs/research/plans/2026-05-10-recursive-subquadratic-fusion-plan.md
+n_surviving_hypotheses: 5
+n_killed: 1
+n_citations: 78
+document_pages_estimate: 8.9  # ≈ 6702 words / 750 words per page
+output_word_count: 6702
+all_yagni_items_addressed: true
+hypotheses_surviving: [H1, H3, H4, H5, H6]
+hypotheses_killed: [H2]
+escalations: 1
+total_workers_dispatched: 37
+section_check:
+  section_1_problem_framing_depth_x_context_plane: present
+  section_2_surviving_hypotheses_with_falsification_criteria: present
+  section_3_per_hypothesis_eval_designs: present
+  section_4_killed_hypothesis_audit_trail: present
+  section_5_yagni_fence_reflection: present
+  section_6_recommended_next_actions: present
+  section_7_run_metadata: present
+  section_8_references: present
+spec_success_criteria_status:
+  hypothesis_count_minimum_3: PASS  # 5 surviving
+  eval_design_depth_per_surviving: PASS
+  audit_trail_complete: PASS  # H2 preserved with verdict + reason; 13 unselected gaps listed
+  synthesist_document_6_to_10_pages: PASS  # 8.9 pages
+  citation_discipline: PASS  # every claim cites arxiv ID / HF ID / repo SHA / industrial blog flag
+flags_preserved:
+  subq_industrial_blog: true  # flagged in section 1, section 5, section 8
+  nolima_non_commercial_license: true  # flagged in section 3 (H3 row), section 8
+recursion_distinction_reasserted: true  # section 1 + section 5 + H3 mechanism
+output_paths:
+  primary_run_root: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/output.md
+  synthesist_subdir_copy: /Users/ggix/research/docs/research/runs/2026-05-10-0729-766039/synthesist/output.md

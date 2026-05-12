@@ -1,0 +1,174 @@
+role: eval-designer
+for_hypothesis: H6
+hypothesis_path: docs/research/runs/2026-05-10-0729-766039/hypothesis-smith-6/revision-1/output.md
+hypothesis_short_name: H6-SUB rev-1 (Sub-additive redundancy of TRM-depthwise × TTT-sequence-time recursion)
+
+datasets:
+  - name: CRUXEval-X (15K items × 19 languages)
+    hf_id: xhwl/cruxeval-x
+    license: MIT (upstream CRUXEVAL-X/cruxeval-x; HF redistribution mirrors)
+    role: primary test surface (problem-clustered hierarchical bootstrap base)
+    verified_status: Valid (19 language splits confirmed via hf_inspect_dataset)
+  - name: CRUXEval-O (800 items, Python only)
+    hf_id: cruxeval-org/cruxeval
+    license: MIT
+    role: secondary single-language cross-check
+    verified_status: Valid (default/test, 800 items, schema {code, input, output, id})
+  - name: FineWeb-Edu
+    hf_id: HuggingFaceFW/fineweb-edu
+    license: ODC-BY-1.0
+    role: pretraining corpus (text, ~60% of token budget)
+    verified_status: Valid (default/train + 113 CC-MAIN configs)
+  - name: GitHub-Code-Clean (permissive sub-configs only)
+    hf_id: codeparrot/github-code-clean
+    license: Apache-2.0/MIT/BSD-2/BSD-3 sub-configs (copyleft excluded)
+    role: pretraining corpus (code, ~40% of token budget)
+    verified_status: Valid (496 config/split rows; using permissive subset)
+
+datasets_count: 4
+
+backbones_treatment:
+  - B1_TTT_Linear (PRIMARY treatment, F1/F2/F3/F4 anchor; reset between outer iterations)
+  - B2_LaCT (F5 replication treatment; chunked TTT)
+
+backbones_baseline:
+  - B3_Mamba (PRIMARY non-TTT control; SSM amortized online learner per Longhorn)
+  - B4_Dense_softmax (PRIMARY non-TTT control; TRM-faithful stationary attention)
+  - B5a_TTT_eta0 (F2-eta0 distinguisher; corrected to "position-wise MLP" per red-team I2)
+  - B5b_FLA_stationary (F2-FLA distinguisher; ADDED by eval-designer for red-team I2 fix)
+  - B6_random_token (trivial sanity floor; analytic)
+  - B7_NN_retrieval (memorize-and-retrieve floor; ~10 GPU-hr one-shot)
+  - B8_prior_art_anchor (Pythia-160M / GPT-Neo-125M cited from CRUXEval Table 2)
+
+baselines_count: 7  # B3, B4, B5a, B5b, B6, B7, B8 — meets ">=3 baselines (prior-art + ablation + trivial)"; trivial=B6; ablation=B5a/B5b; prior-art=B8
+
+metrics_primary:
+  - M_primary: compression ratio r = ΔA_TTT-Linear(K=4) / max(ΔA_Mamba, ΔA_dense, ΔA_eta0, ΔA_FLA) on d>=3 cohort
+metrics_secondary:
+  - M_sec1_F2_distinguisher_gaps  # Δ_eta0 and Δ_FLA at K=4
+  - M_sec2_CoT_confound_shift     # r_CoT − r_no-CoT
+  - M_sec3_depth_axis_specificity # r_d=1 vs r_d>=3
+  - M_sec4_LaCT_replication       # ΔA_LaCT − ΔA_TTT-Linear
+metrics_diagnostic:
+  - M_diag1_per_K_curve_with_Hartigan_dip_test
+  - M_diag2_recurrence_equivalence_phi_calibration  # arXiv:2604.21106 anchor
+  - M_diag3_eta_sensitivity_sweep
+  - M_diag4_trivial_baseline_floor
+
+n_metrics: 9  # 1 primary + 4 secondary + 4 diagnostic
+
+falsification_experiments:
+  - F1_compression_ratio_r        # primary; problem-clustered bootstrap
+  - F2_eta0_distinguisher         # |A_TTT-Linear K=4 − A_eta0 K=4| ≤ 2.0
+  - F2_FLA_distinguisher          # |A_TTT-Linear K=4 − A_FLA-stationary K=4| ≤ 2.0 (red-team I2 fix)
+  - F3_CoT_confound               # r_CoT − r_no-CoT ≥ +0.2
+  - F4_depth_specificity          # r_d=1 ≥ 0.7 AND r_d=1 > r_d>=3
+  - F5_LaCT_replication           # ΔA_LaCT − ΔA_TTT-Linear ≤ +2.0
+
+falsification_experiments_count: 6  # F1, F2-eta0, F2-FLA (split for I2 fix), F3, F4, F5 — at least one per F-criterion in hypothesis
+
+ablations:
+  - A1_inner_loop_reset_vs_persist        # primary architecture ablation; per hypothesis
+  - A2_gradient_flow_TRM_faithful_vs_full # red-team I4 fix; commits axis specification
+  - A3_eta_sensitivity_sweep              # diagnostic, smooth vs sharp F2 transition
+  - A4_d_bucket_sweep_post_hoc            # F4 mechanism; post-hoc, no extra GPU
+  - A5_persist_with_detach_gradient       # disentangles state from gradient
+
+ablations_count: 5
+
+statistical_analysis:
+  pre_registered: true
+  primary_test: hierarchical bootstrap with base-problem-level clustering, then seed-level resampling
+  bootstrap_iterations: 10000
+  problem_level_clustering: true  # per red-team I1 (resamples problems-with-all-19-languages-as-units)
+  alpha_per_test: 0.01            # Bonferroni-corrected from 0.05 across 5 F-criteria
+  multiple_comparison: Holm-Bonferroni step-down at alpha=0.01; F1 and F2 co-primary; F3-F5 secondary
+  effect_size_of_interest_F1: r=0.5 (support upper bound) vs r=0.8 (falsification lower bound)
+  effect_size_of_interest_F2: 2.0 abs pts (loosened from hypothesis 1.5 per red-team marginally-powered finding)
+  assumed_within_seed_sigma_d3_cohort: 0.026   # binomial std at p=0.30, N=310 effective base problems
+  assumed_SEM_on_DeltaA_5_seeds: 0.0164         # 0.0116 × √2
+  assumed_SEM_on_r_5_seeds: 0.0086              # √((0.0164/0.020)^2 + (0.0164/0.060)^2)
+  bootstrap_CI_width_5_seeds: ±1.7 abs pts on r # = 2× SEM
+  seeds_phase_A: 5
+  seeds_phase_B_conditional: 10
+  seeds_phase_C_conditional: 15
+  escalation_trigger_phase_B: bootstrap 95% CI on r contains both 0.5 and 0.8 after Phase A
+  escalation_trigger_phase_C: bootstrap 95% CI on r still spans 0.8 after Phase B
+  inconclusive_handling: "if Phase C still ambiguous, REPORT inconclusive (NOT supported, NOT falsified) — pre-registered, no post-hoc threshold relaxation"
+  preregistration_artifact: docs/research/runs/2026-05-10-0729-766039/eval-designer-6/preregistration.json
+
+compute_estimate:
+  cheap_path_A_gpu_hours: 150     # open-weights checkpoints + 2B-token TRM fine-tune × 4 backbones × 2 K × 3 seeds
+  cheap_path_B_gpu_hours: 5       # eta-sweep on existing TTT checkpoint
+  phase_A_primary_gpu_hours: 3240 # 6 backbones × 4 K × 5 seeds × ~27 hr avg (TRM-faithful gradient-flow recipe)
+  ablations_gpu_hours: 1556       # A1+A2+A3+A5 (A4 is post-hoc 0)
+  F3_CoT_inference_gpu_hours: 300 # inference-only re-evaluation
+  phase_B_escalation_gpu_hours: 1620
+  phase_C_escalation_gpu_hours: 1620
+  total_phase_A_plus_ablations_plus_F3: 5096
+  total_with_phase_B: 6716
+  total_with_phase_C: 8336
+  hardware: 8× NVIDIA H100 SXM
+  effective_tflops_assumed: 700
+  flagged_intractable: true
+  flagged_intractable_reason: |
+    Phase A primary (3240 GPU-hr) + ablations (1556 GPU-hr) + F3 (300 GPU-hr) = ~5,096 GPU-hr is OVER the
+    2,000-hour fence. The minimum kill-test for F1 (the primary criterion, in the trivial-null r ≈ 1.0 case)
+    is Cheap-Path-A at ~150 GPU-hr — IN-fence and pre-registered. The full Phase A run that genuinely tests
+    the predicted r ≈ 0.33 vs threshold 0.5 separation requires the over-fence budget. Compute-reduction
+    options R1+R2+R4 in §8.6 reduce to ~2,800 GPU-hr — still over fence — but trade off load-bearing
+    aspects of the design (R4 drops the FLA-stationary control that is the red-team-I2 fix). Recommend the
+    user explicitly approve over-fence budget OR accept the cheap-path-only kill-test, with the explicit
+    caveat that cheap-path-A is per-Ouro a weaker probe (training-time wrapping required for full prediction).
+
+cheaper_falsification_path_kill_test_status: PARTIAL
+cheaper_falsification_path_kill_test_notes: |
+  Cheap-Path-A (~150 GPU-hr) is a kill-test for the trivial-null case (r ≈ 1.0, additive composition):
+  if cheap-path r ≥ 0.7, the §8 full-pre-training run is not warranted. It is NOT a kill-test for the
+  predicted r ≈ 0.33 vs threshold 0.5 distinction, because cheap-path uses non-recursion-pretrained
+  checkpoints with light fine-tune wrapping (per Ouro arXiv:2510.25741, iteration must be baked in at
+  pre-training to fully manifest). A null cheap-path result is suggestive but does not strictly falsify
+  the full-pre-training prediction. A *positive* cheap-path result (r ≤ 0.5) is strong evidence to fund §8.
+
+residual_red_team_round_2_issues_addressed:
+  I1_19_language_independence_overcount:
+    handled_in_design: true
+    how: |
+      §5.1 specifies hierarchical bootstrap with base-problem-level clustering (each problem with all
+      19 languages as one unit), explicitly resolving "the smith treats CRUXEval-X 19 languages as 19×
+      independent." §5.2 uses ~310 base problems as effective N (not 5,890 item-instances). Pre-registered
+      seed-escalation rules §5.4 (5 → 10 → 15 seeds) handle the residual ambiguous zone.
+  I2_eta0_collapses_to_position_wise_MLP_not_linear_attention:
+    handled_in_design: true
+    how: |
+      §2.5 splits the F2 distinguisher into TWO backbones: B5a η=0 (the position-wise MLP, NOT
+      static linear attention as smith claimed) AND B5b FLA-stationary (a true static linear-attention
+      operator). Mechanism interpretation table provided for the four (F2-η0, F2-FLA) outcomes.
+      F2 is split into F2-η0 and F2-FLA in the falsification table; both must be satisfied for F2 support.
+  I3_M2_overgeneralizes_TRM_4_5:
+    handled_in_design: true
+    how: |
+      §2 prelude de-loads from "attention-removal in TRM" and reframes M2 to depend only on "TRM re-runs
+      the backbone-induced operator." M_diag2 (§3.7) anchors to arXiv:2604.21106's φ ≈ 0.46 recurrence-
+      equivalence exponent as the saturation-of-recurrence evidence — NOT TRM §4.5.
+  I4_K_arch_axis_ambiguity_vs_TRM_T_n_N_sup:
+    handled_in_design: true
+    how: |
+      §2.6 explicitly commits: K_arch = T (full recursion processes), n=4 fixed, N_sup=1. Gradient-flow
+      recipe is TRM-faithful "gradient through last process only" (PRIMARY). A2 ablation runs the full-
+      backprop variant at K=4 across 5 backbones × 5 seeds (25 runs) to test whether F1 outcome depends
+      on this choice.
+  I5_AST_depth_extraction_unspecified:
+    handled_in_design: true
+    how: |
+      §1.3 commits the exact Python `ast` extraction script (counts ast.For, ast.While, ast.If, ast.IfExp,
+      ast.FunctionDef, ast.Lambda, ast.comprehension nesting; not ast.Call, ast.With, ast.Try). For
+      non-Python languages, transpile back to shared CRUXEval-O Python source via the shared `id` field
+      and run on Python AST (the language translations are mechanically generated from CRUXEval-O).
+      §1.4 commits the dry-run d-distribution table to be reported before any model training.
+
+verification_artifacts_present:
+  - output.md
+  - manifest.yaml
+  - verification.md
+  - preregistration.json (TO BE CREATED before Phase A; SHA-1 hashes of d_extract.py and eval_h6sub_v1.py)

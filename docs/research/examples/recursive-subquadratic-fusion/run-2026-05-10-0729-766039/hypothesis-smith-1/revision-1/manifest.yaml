@@ -1,0 +1,51 @@
+role: hypothesis-smith
+worker_id: hypothesis-smith-1
+targeting_gap: docs/research/runs/2026-05-10-0729-766039/gaps.md#H1
+revision: 1
+falsifiable: true
+mechanism_grounded: true
+addresses_objections:
+  - RT-1-citation-error-NSA-single-pass
+  - RT-2-non-additivity-isolation-DiD-sign-asymmetry
+  - RT-3-F4-inoperable-replaced-with-attention-Jaccard
+  - RT-4-DSA-not-NSA-cheap-path-restructured
+  - RT-5-compute-match-Ouro-FLOP-matched-non-shared-deeper
+  - RT-6-PLT-counter-evidence-sufficient-not-necessary
+  - RT-7-tunnel-vision-misapplied-removed
+  - RT-8-magnitude-transfer-anchored-on-PLT-not-TRM-puzzle
+  - RT-9-350M-feasibility-moved-to-1B-full-experiment
+  - RT-11-M3-uncited-demoted-to-auxiliary
+  - RT-13-sparse-frontier-mismatch-citation-narrowed
+key_changes:
+  central_falsifier: difference-in-differences with sign-asymmetry and K=1 calibration constraint
+  recursion_lift_anchor: PLT arXiv:2510.24824 Tab 2 (+6.1 on text MoE)
+  flop_match_protocol: Ouro arXiv:2510.25741 §4 (non-shared deeper K=1 baseline)
+  cheap_path_A_compute_GPU_hours: 250
+  cheap_path_B_compute_GPU_hours: 50
+  full_experiment_compute_GPU_hours: 1100
+  full_experiment_scale: 1B parameters, 50B training tokens, 8 runs
+  fence_2000_GPU_hours: in-fence (was 3800 in revision-0, over fence)
+  load_bearing_mechanism: M1 + M2 (compressed-branch query-conditioned re-weighting)
+  speculative_mechanism: M3 (retrieval-head behavior on compressed branch — explicitly NOT load-bearing)
+falsification_criteria_count: 4
+  # F1 (necessary lift floor), F2 (sufficient DiD + sign-asymmetry, K=1-calibrated, central),
+  # F3 (causal compressed-branch ablation), F4' (attention-Jaccard mechanistic probe)
+recursion_sense: architectural (weight-tied, no token emission), per spec YAGNI fence
+non_additive_prediction: true (DiD + sign asymmetry forecloses additive null)
+arxiv_ids_verified:
+  - 2502.11089  # NSA — Tab 1/2 verified this session via read_paper experiments section
+  - 2510.24824  # PLT — Tab 2 row 6 +6.1 verified this session via read_paper §3
+  - 2512.02556  # DSA — §2 confirmed lightning-indexer top-k, no compressed branch
+  - 2507.02199  # Huginn Logit-Lens / Coda-Lens probe critique — paper_details verified
+  - 2510.04871  # TRM
+  - 2502.05171  # Huginn
+  - 2510.25741  # Ouro
+  - 2502.13189  # MoBA
+  - 2406.10149  # BABILong
+  - 2406.21734  # HRM (note: also cited as 2506.21734 in red-team; verified id is 2506.21734)
+  - 2506.21734  # HRM (canonical)
+  - 2507.10524  # MoR
+  - 2506.08889  # SeerAttention-R
+  - 2504.17768  # Sparse Frontier (citation narrowed to Jaccard methodology)
+  - 2404.15574  # Retrieval Head (auxiliary, M3)
+  - 1807.03819  # Universal Transformer
