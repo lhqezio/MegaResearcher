@@ -48,6 +48,20 @@ Claude Code's harness forbids nested agent dispatch — a subagent cannot use th
 
 There is intentionally no `agents/research-swarm.md`. If you (Claude) see references to a "research-swarm orchestrator subagent" in older docs or commits, ignore them — that pattern was tried and reverted because it broke against the nested-dispatch restriction.
 
+## Optional paper-drafting chain (SP1)
+
+`/research-execute --paper` extends the existing chain with 3 additional phases:
+
+- **Phase 7** — `manuscript-drafter` produces `paper/draft-v1.md` from `output.md` + eval-designer protocols
+- **Phase 8** — `peer-reviewer` + `reviser` loop, cap 2 rounds, early-exit on APPROVE
+- **Phase 9** — finalize → `paper/paper.md` + `paper/paper-history.md`
+
+Requires the underlying run's novelty target to be `hypothesis` (paper chain consumes Phase 5 eval-designer outputs). Pre-flight refuses on `gap-finding`-target outputs.
+
+The paper chain produces NO fabricated experimental results — the Experimental Plan section embeds the eval-designer protocols as "we will measure X via Y" (no numbers). SP2 will add an experimentalist worker that replaces the plan with results.
+
+Architecture: same single-session orchestrator + leaf-worker pattern. New agents are leaves; new Python helpers in `lib/paper_chain/` handle verdict parsing, regression detection, pre-flight, scaffold, and finalize.
+
 ## Common failure modes and what to do
 
 - **Worker returns without all three required artifacts** (output.md, manifest.yaml, verification.md): the skill re-dispatches once with explicit instructions about the missing artifact. After one retry, escalate to the user.

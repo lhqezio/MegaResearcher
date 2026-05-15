@@ -25,6 +25,18 @@ Verify by checking that `~/.claude/plugins/cache/claude-plugins-official/superpo
 
 **4. The consuming project has `docs/research/runs/`.** Create if missing.
 
+## Optional: `--paper` flag
+
+If the `/research-execute` invocation includes `--paper`, the orchestrator runs three additional phases (7, 8, 9) after Phase 6 to produce a paper draft. The flag is consumed in the main session — detect it from the invocation arguments and gate Phases 7–9 on its presence.
+
+If `--paper` is set, run an additional pre-flight check before starting Phase 7:
+
+```
+python3 lib/paper_chain/preflight.py docs/research/runs/<run-id>/
+```
+
+If this exits non-zero, surface the stderr message to the user and refuse to start Phase 7. Do NOT start Phases 7–9 if pre-flight fails.
+
 ## Generate the run-id and scaffold
 
 Run id: `YYYY-MM-DD-HHMM-<6-char-hex>` (today's UTC date+time + a short random hash).
@@ -113,6 +125,106 @@ Single dispatch. Prompt:
 - Output path: `docs/research/runs/<run-id>/synthesist/` AND the run-root `output.md`
 
 After return: update the symlink `docs/research/specs/<spec-basename>-latest.md` → the new run's `output.md`.
+
+### Phase 7 — manuscript-drafter (only if `--paper`)
+
+Skip this phase entirely if `--paper` is not set.
+
+Otherwise:
+
+1. Run `python3 lib/paper_chain/scaffold.py docs/research/runs/<run-id>/` to create the `paper/` subdirectory.
+2. Dispatch ONE `megaresearcher:manuscript-drafter` subagent with the prompt containing:
+   - Full content of `docs/research/runs/<run-id>/output.md` (research-direction)
+   - Full content of every `docs/research/runs/<run-id>/eval-designer-*/output.md`
+   - Output path: `docs/research/runs/<run-id>/paper/`
+   - Reminder of the three required artifacts: `draft-v1.md`, `drafter-manifest.yaml`, `drafter-verification.md`
+3. Wait for completion. Run the per-worker verification gate.
+4. **Citation-integrity gate (failure #2):** read the draft. Every arXiv ID appearing in `draft-v1.md` must also appear in the research-direction's Sources section. Use:
+   ```
+   grep -oE "arXiv:[0-9]{4}\.[0-9]{4,5}" docs/research/runs/<run-id>/paper/draft-v1.md | sort -u
+   grep -oE "arXiv:[0-9]{4}\.[0-9]{4,5}" docs/research/runs/<run-id>/output.md | sort -u
+   ```
+   The first set must be a subset of the second. If not, re-dispatch the drafter once with the offending arXiv IDs called out. After one retry, escalate.
+5. Update `swarm-state.yaml`:
+   ```yaml
+   phase_7_manuscript_drafter:
+     status: completed
+     output: paper/draft-v1.md
+   ```
+
+### Phase 8 — peer-reviewer + reviser loop (only if `--paper`)
+
+Skip if `--paper` not set. Otherwise: loop with N starting at 1, capped at 2.
+
+**Round N:**
+
+1. Dispatch ONE `megaresearcher:peer-reviewer` subagent with:
+   - Full content of `docs/research/runs/<run-id>/paper/draft-v<N>.md`
+   - Full content of `docs/research/runs/<run-id>/output.md` (research-direction, for context)
+   - Output path: `docs/research/runs/<run-id>/paper/`
+   - Required artifact filenames: `review-v<N>.md`, `reviewer-manifest-v<N>.yaml`, `reviewer-verification-v<N>.md`
+2. Wait for completion. Run the per-worker verification gate.
+3. Parse the verdict:
+   ```
+   python3 lib/paper_chain/verdict.py docs/research/runs/<run-id>/paper/review-v<N>.md
+   ```
+   Verdict is one of `APPROVE`, `REVISE`, `KILL`, or `NONE` (parse failure).
+4. **If `APPROVE`:** record in `swarm-state.yaml`, exit Phase 8 loop, proceed to Phase 9.
+5. **If `KILL`:** record in `swarm-state.yaml`, append to `swarm-state.escalations` with the reviewer's reasoning, SKIP Phase 9, surface to user. Run still produces the last `draft-v<N>.md` for inspection but no `paper.md`.
+6. **If `NONE` (parse failure):** treat as failure #1 (missing artifact). Re-dispatch reviewer once with explicit feedback. After one retry, escalate.
+7. **If `REVISE` and N < 2:**
+   - Dispatch ONE `megaresearcher:reviser` subagent with:
+     - Full content of `docs/research/runs/<run-id>/paper/draft-v<N>.md`
+     - Full content of `docs/research/runs/<run-id>/paper/review-v<N>.md`
+     - Output path: `docs/research/runs/<run-id>/paper/`
+     - Required artifact filenames: `draft-v<N+1>.md`, `reviser-manifest-v<N>.yaml`, `reviser-verification-v<N>.md`, and APPEND to `revision-log.jsonl`
+   - Wait for completion. Run the per-worker verification gate.
+   - Run the same citation-integrity gate as Phase 7 step 4 on `draft-v<N+1>.md`.
+   - Increment N. Loop back to step 1.
+
+After Round 2's review (review-v2) is produced (step 2 of the second iteration), run **regression detection** before parsing the verdict:
+```
+python3 lib/paper_chain/regression.py \
+  docs/research/runs/<run-id>/paper/review-v1.md \
+  docs/research/runs/<run-id>/paper/review-v2.md
+```
+If REGRESSION (exit 1), append to escalations with note "runaway revision detected" and surface to user for adjudication BEFORE deciding whether to proceed (regardless of verdict). Do NOT auto-advance on regression flag.
+
+8. **If `REVISE` and N == 2:** cap reached. Record in `swarm-state.yaml`, append to escalations with verdict and reviewer reasoning. Surface to user: "2 review rounds completed, final verdict still REVISE. Continue manually, accept the last draft as Phase 9 input, or abandon?" Do NOT auto-advance to Phase 9.
+
+After loop exit (APPROVE or escalation):
+```yaml
+phase_8_review_loop:
+  status: completed|escalated
+  rounds_completed: 1|2
+  final_verdict: APPROVE|REVISE|KILL
+  rounds:
+    - round: 1
+      review: paper/review-v1.md
+      revision: paper/draft-v2.md  # null if APPROVE on this round
+    # - round: 2 ... only if first round was REVISE
+```
+
+### Phase 9 — finalize (only if `--paper` AND Phase 8 ended in `APPROVE` OR user accepted last draft)
+
+Skip if `--paper` not set, or if Phase 8 exited via `KILL`, or if the user declined to accept the last draft after a cap-2 REVISE.
+
+Otherwise:
+
+1. Run finalize:
+   ```
+   python3 lib/paper_chain/finalize.py docs/research/runs/<run-id>/paper/ <final-verdict>
+   ```
+   This:
+   - Writes `paper.md` (copy of the latest `draft-v<N>.md`)
+   - Concatenates all `review-v<N>.md` files + `revision-log.jsonl` + final verdict marker into `paper-history.md`
+2. Update `swarm-state.yaml`:
+   ```yaml
+   phase_9_finalize:
+     status: completed
+     paper: paper/paper.md
+   ```
+3. The run's paper deliverable is now at `docs/research/runs/<run-id>/paper/paper.md`. Surface this path to the user.
 
 ## Per-worker verification gate
 

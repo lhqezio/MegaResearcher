@@ -1,6 +1,6 @@
 ---
 description: Execute an approved MegaResearcher research plan. Invokes the `executing-research-plan` skill, which runs the orchestrator in the main session and dispatches worker subagents in waves. Will spend significant tokens — only use after the plan is reviewed and approved.
-argument-hint: "<path-to-plan>"
+argument-hint: "<path-to-plan> [--paper]"
 ---
 
 The user invoked `/research-execute $ARGUMENTS`.
@@ -15,3 +15,9 @@ Invoke the `executing-research-plan` skill with that plan path. The skill will:
 5. Run `research-verification` after the swarm completes
 
 Do not bypass the pre-flight checks. Do not auto-approve escalations.
+
+## Optional `--paper` flag
+
+If the invocation ends with `--paper`, the orchestrator runs three additional phases (7, 8, 9) after Phase 6 synthesist to produce a paper draft. Requires the underlying research plan's novelty target to be `hypothesis` (paper chain refuses to run on `gap-finding`-target plans because it consumes Phase 5 eval-designer outputs).
+
+Output of the paper chain lands at `docs/research/runs/<run-id>/paper/paper.md`. The original research-direction at `docs/research/runs/<run-id>/output.md` is unchanged.
