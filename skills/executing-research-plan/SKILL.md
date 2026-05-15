@@ -126,6 +126,47 @@ Single dispatch. Prompt:
 
 After return: update the symlink `docs/research/specs/<spec-basename>-latest.md` → the new run's `output.md`.
 
+### Phase 6.5 — experimentalist (only if `--paper` AND Phase 5 produced surviving hypotheses)
+
+Skip if `--paper` not set. Skip if Phase 5 produced no surviving hypotheses (gap-finding runs already short-circuit at preflight).
+
+Otherwise, for each `docs/research/runs/<run-id>/eval-designer-S<N>/output.md` from Phase 5:
+
+1. `mkdir -p docs/research/runs/<run-id>/paper/experiments/S<N>/`
+2. Dispatch ONE `megaresearcher:experimentalist` subagent with:
+   - `hypothesis_id`: S<N>
+   - `protocol_path`: `docs/research/runs/<run-id>/eval-designer-S<N>/output.md`
+   - `output_path`: `docs/research/runs/<run-id>/paper/experiments/S<N>/`
+   - Budget: $5 sandbox + $5 API
+3. Wait for completion. Run the per-worker verification gate on the experimentalist's three artifacts (`experimentalist-manifest.yaml`, `experimentalist-verification.md`, plus the orchestrator-produced `results.json`).
+4. Read `paper/experiments/S<N>/results.json` and record in `swarm-state.yaml`:
+   ```yaml
+   phase_6_5_experimentalist:
+     status: in_progress|completed|partial-fail|escalated
+     experiments:
+       - hyp_id: S<N>
+         substrate: <from results.json>
+         status: <from results.json>
+         failure_code: <from results.json or null>
+         results: paper/experiments/S<N>/results.json
+         cost_usd: <from results.json>
+         retry_count: 0|1
+     total_cost_usd: <sum>
+   ```
+5. **If `status: failed_runner_not_implemented`:** expected for SP2a skeleton runners. Continue chain — drafter handles fallback. Do NOT retry.
+6. **If `status: failed_timeout` or `status: failed_exception`:** re-dispatch experimentalist ONCE with the failure_message inlined as feedback. After one retry, mark `failed`, continue chain.
+7. **If `status: failed_budget`:** record cost-so-far, escalate to user with the cost figure, continue chain (drafter sees the failure and stubs accordingly).
+8. **If `status: failed_unsupported_substrate` or `failed_parse`:** cannot retry. Continue chain with the failed result preserved.
+
+After all experiments processed, mark `phase_6_5_experimentalist.status` based on whether ANY experiment succeeded:
+- `completed` if all `status: completed`
+- `partial-fail` if at least one succeeded
+- `escalated` if all failed
+
+The paper chain proceeds to Phase 7 (drafter) regardless. Failed experiments are surfaced in the final `paper-history.md` "Failed experiments" section by Phase 9 finalize.
+
+**Note on Vercel auth:** Phase 6.5 expects `VERCEL_TOKEN` in the environment. If absent, `VercelSandboxBackend.spin_up` raises immediately; pre-flight should warn earlier. If you skipped pre-flight (e.g., running an experiment as a one-off), the first failed experiment will surface the missing-token error and Phase 6.5 should escalate immediately rather than continue trying.
+
 ### Phase 7 — manuscript-drafter (only if `--paper`)
 
 Skip this phase entirely if `--paper` is not set.

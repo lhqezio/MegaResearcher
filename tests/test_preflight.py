@@ -62,6 +62,24 @@ def test_no_eval_designer_outputs():
     assert "eval-designer" in reason
 
 
+def test_preflight_warns_about_vercel_token_when_paper():
+    """When --paper is set and VERCEL_TOKEN absent, preflight returns ok=True
+    with a non-empty warnings list. The presence of a warning does not block;
+    it just informs the user that Phase 6.5 will fail if it tries to use the
+    Vercel backend."""
+    import os
+    run = _make_run("hypothesis", with_output=True, with_eval_designers=3)
+    saved = os.environ.pop("VERCEL_TOKEN", None)
+    try:
+        from lib.paper_chain.preflight import preflight_check_with_paper
+        ok, reason, warnings = preflight_check_with_paper(run, paper_mode=True)
+        assert ok
+        assert any("VERCEL_TOKEN" in w for w in warnings)
+    finally:
+        if saved is not None:
+            os.environ["VERCEL_TOKEN"] = saved
+
+
 if __name__ == "__main__":
     failures = []
     for name, fn in list(globals().items()):

@@ -48,7 +48,7 @@ Claude Code's harness forbids nested agent dispatch — a subagent cannot use th
 
 There is intentionally no `agents/research-swarm.md`. If you (Claude) see references to a "research-swarm orchestrator subagent" in older docs or commits, ignore them — that pattern was tried and reverted because it broke against the nested-dispatch restriction.
 
-## Optional paper-drafting chain (SP1)
+## Optional paper-drafting chain (SP1+SP2a)
 
 `/research-execute --paper` extends the existing chain with 3 additional phases:
 
@@ -61,6 +61,12 @@ Requires the underlying run's novelty target to be `hypothesis` (paper chain con
 The paper chain produces NO fabricated experimental results — the Experimental Plan section embeds the eval-designer protocols as "we will measure X via Y" (no numbers). SP2 will add an experimentalist worker that replaces the plan with results.
 
 Architecture: same single-session orchestrator + leaf-worker pattern. New agents are leaves; new Python helpers in `lib/paper_chain/` handle verdict parsing, regression detection, pre-flight, scaffold, and finalize.
+
+**SP2a additions:**
+- **Phase 6.5** — `experimentalist` runs each surviving hypothesis's protocol via a Vercel Sandbox VM. Inserts BETWEEN Phase 6 (synthesist) and Phase 7 (drafter). Requires `VERCEL_TOKEN` env var.
+- **5 skeleton runners** in `lib/runners/{specs,abgen,citeme,limitgen,paperwrite_bench}/` satisfy the Runner schema contract. Real benchmark integrations are deferred to per-runner follow-up plans (SP2a.1 SPECS, SP2a.2 AbGen, SP2a.3 CiteME, SP2a.4 LimitGen, SP2a.5 PaperWrite-Bench).
+- **Drafter modification** — Section 6 of `draft-v1.md` becomes "Experiments & Results" with real numbers when `paper/experiments/<hyp-id>/results.json` has `status: completed`; falls back to SP1's option-γ "Experimental Plan" stub when results are absent or `status: failed` (with a `[Experimental data unavailable: <code>]` marker for failed cases).
+- **Cost ceiling: $5 sandbox + $5 API per experiment.** Hard-stop on exceed. 1 retry on transient failures (timeout / exception). Failed experiments visible in `paper-history.md`.
 
 ## Common failure modes and what to do
 

@@ -68,6 +68,26 @@ def preflight_check(run_dir: Path) -> tuple[bool, str]:
     return (True, "")
 
 
+def preflight_check_with_paper(
+    run_dir: Path, paper_mode: bool = False
+) -> tuple[bool, str, list[str]]:
+    """Extended preflight: returns (ok, reason, warnings).
+
+    When paper_mode=True, adds env-var warnings for VERCEL_TOKEN (Phase 6.5)
+    without blocking the chain. The caller surfaces warnings to the user.
+    """
+    import os
+    ok, reason = preflight_check(run_dir)
+    warnings: list[str] = []
+    if ok and paper_mode and not os.environ.get("VERCEL_TOKEN"):
+        warnings.append(
+            "VERCEL_TOKEN not set — Phase 6.5 (experimentalist) will fail "
+            "immediately when it tries to spin up a sandbox. Set the env var "
+            "before invoking /research-execute --paper if you want experiments."
+        )
+    return (ok, reason, warnings)
+
+
 def _main(argv: list[str]) -> int:
     if len(argv) != 2:
         print("usage: preflight.py <run-dir>", file=sys.stderr)
