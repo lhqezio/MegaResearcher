@@ -1,0 +1,17 @@
+{
+  "hypothesis_id": "S1",
+  "substrate": "unknown",
+  "metric_name": null,
+  "baseline_value": null,
+  "treatment_value": null,
+  "p_value": null,
+  "ci_low": null,
+  "ci_high": null,
+  "n": null,
+  "seed": null,
+  "runtime_seconds": 0.0,
+  "cost_usd": 0.0,
+  "status": "failed",
+  "failure_code": "failed_parse",
+  "failure_message": "Protocol at /Users/ggix/MegaResearcher/tests/fixtures/paper-chain/eval-designer-S1/output.md could not be parsed."
+}
