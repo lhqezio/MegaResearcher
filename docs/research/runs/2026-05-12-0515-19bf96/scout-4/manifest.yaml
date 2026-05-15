@@ -1,0 +1,46 @@
+role: literature-scout
+worker_id: scout-4
+sub_topic: "Experiment execution and verification in agent systems — agents that run code, run experiments, and verify results, plus their documented failure modes (premature completion, hallucinated success, long-horizon coherence loss) and sandboxed-execution platforms"
+papers_count: 24
+datasets_count: 12
+implementations_count: 17
+open_questions_flagged: 8
+status: complete
+arxiv_ids:
+  - "2402.01030"   # CodeAct
+  - "2405.15793"   # SWE-agent
+  - "2407.16741"   # OpenDevin / OpenHands
+  - "2408.06292"   # AI Scientist v1
+  - "2409.11363"   # CORE-Bench
+  - "2410.07095"   # MLE-bench
+  - "2411.15114"   # RE-Bench
+  - "2501.04227"   # Agent Laboratory
+  - "2503.18102"   # AgentRxiv (context only)
+  - "2504.08066"   # AI Scientist v2
+  - "2504.09702"   # MLRC-Bench
+  - "2505.07782"   # MLE-Dojo
+  - "2505.14738"   # R&D-Agent
+  - "2505.19955"   # MLR-Bench
+  - "2506.17335"   # LMR-Bench
+  - "2509.08713"   # Hidden Pitfalls of AI Scientist Systems
+  - "2509.21766"   # UltraHorizon
+  - "2510.21652"   # AstaBench
+  - "2511.03690"   # OpenHands SDK
+  - "2511.13646"   # Live-SWE-agent
+  - "2601.03315"   # Why LLMs Aren't Scientists Yet
+  - "2601.10402"   # ML-Master 2.0 (Ultra-Long-Horizon Agentic Science)
+  - "2602.02475"   # AgentRx
+  - "2602.11354"   # ReplicatorBench
+  - "2602.15112"   # ResearchGym
+  - "2602.23452"   # CiteAudit
+  - "2603.19974"   # Trojan's Whisper
+  - "2603.27646"   # PRBench
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers
+  - mcp__plugin_megaresearcher_ml-intern__web_search
+non_arxiv_sources:
+  - "https://www.superagent.sh/blog/ai-code-sandbox-benchmark-2026"
+  - "https://northflank.com/blog/daytona-vs-e2b-ai-code-execution-sandboxes"
+  - "https://vercel.com/kb/guide/vercel-sandbox-vs-e2b"
+  - "https://github.com/nibzard/ai-sandbox-benchmark"
+output_path: /Users/ggix/MegaResearcher/docs/research/runs/2026-05-12-0515-19bf96/scout-4

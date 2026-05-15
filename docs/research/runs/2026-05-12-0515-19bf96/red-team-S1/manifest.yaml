@@ -1,0 +1,104 @@
+role: red-team
+worker_id: red-team-S1
+target: docs/research/runs/2026-05-12-0515-19bf96/hypothesis-smith-S1/output.md
+critiquing: docs/research/runs/2026-05-12-0515-19bf96/hypothesis-smith-S1/output.md
+revision_round: 2
+revision_pass: 2
+prior_verdict: REJECT
+new_verdict: APPROVE
+verdict: APPROVE
+cap_3_final_pass: true
+critical_count: 0
+important_count: 2
+suggestion_count: 1
+objections_count: 3
+gap_claim_survives: true
+gap_claim_survives_note: |
+  Empirical-priority gap (running ARIS Appendix E on AgentRxiv-style
+  harness with SPECS-validated-subset substrate, cross-family judge
+  protocol, and F4 capability-symmetry control, under ≤$200) survives
+  all three independent literature queries this pass. No published work
+  uses SPECS as a writer/reviewer-split substrate. Gap survives at
+  workshop-grade-pilot framing.
+prior_critical_addressed:
+  NEW-1_budget_breach: fixed_locked_at_195_dollars
+  NEW-2_CiteME_substrate_fit: fixed_SPECS_re-elevated_with_cross_family_judge
+  NEW-3_floor_test_inconsistency: fixed_single_pair_no_bonferroni_floor_raised_to_0.05_honest_alpha_0.13_disclosure
+  C1_ARIS_positioning: addressed_section_1_foregrounded
+  C2_non_judge_substrate: trade_accepted_substrate_fit_over_non_judge_purity
+  C3_magnitude_collapse: structural_fix_held_floor_consistent_with_test
+  C4_AgentRxiv_overread: addressed_weakened_claim_held
+  C5_capability_asymmetry: F4_threshold_anchored_to_measurement_SE
+remaining_important_objections:
+  - synthesist_must_present_part_A_as_workshop_grade_with_part_B_future_work_flag
+  - synthesist_must_flag_memorization_confound_AAAI-25_as_primary_residual
+remaining_suggestion_objections:
+  - section_4.3_Wataoka_grounding_empirical_not_theoretical_no_better_citation_surfaced
+citation_corrections_caught_in_revision:
+  - smith_caught_fabricated_Hewitt_2407.21783_during_verification
+  - replaced_with_Wataoka_2410.21819_verified_correct_this_pass
+budget_arithmetic_verified:
+  cells: 264
+  cell_decomposition: 22_perturbations_x_1_pair_x_2_orientations_x_3_seeds_x_2_conditions
+  writer_reviewer_unit_cost: 0.45
+  judge_unit_cost: 0.20
+  writer_reviewer_subtotal: 119
+  judge_subtotal: 53
+  pilot_subtotal: 3
+  buffer_subtotal: 20
+  total: 195
+  spec_ceiling: 200
+  under_budget: true
+specs_a_9_4_verification:
+  read_paper_section: "A.9 SPECS Benchmark Curation Process"
+  table_5_verbatim: |
+    Story 6/5/5/5, Presentation 7/3/4/3, Evaluations 8/5/6/5,
+    Correctness 7/7/6/6, Significance 7/3/4/3, All 35/23/25/22
+  consensus_valid_count: 22
+  consensus_valid_breakdown: "5 Story + 3 Presentation + 5 Evaluations + 6 Correctness + 3 Significance"
+  smith_claim_matches_paper_verbatim: true
+aris_appendix_e_verification:
+  read_paper_section: "Appendix E"
+  five_arm_protocol_confirmed: true
+  future_work_label_confirmed: true
+  twelve_plus_paper_drafts_confirmed: true
+  krippendorff_alpha_confirmed: true
+citations_used:
+  - arxiv:2604.13940  # SPECS A.9 § A.9.4 — Table 5 22-consensus-valid verified verbatim
+  - arxiv:2605.03042  # ARIS Appendix E — re-verified verbatim
+  - arxiv:2410.21819  # Wataoka self-preference bias — verified
+  - arxiv:2502.08788  # Zhang heterogeneity (carried verification)
+  - arxiv:2407.12861  # CiteME (demoted to Part B, prior verification carried)
+  - arxiv:2503.18102  # AgentRxiv (carried)
+independent_queries_run: 3
+citations_spot_checked: 3
+verdict_severity_consistent: true
+verdict_severity_consistent_note: |
+  Zero Critical objections remain. Two Important objections, both
+  addressed to the synthesist (not requiring smith revision). One
+  Suggestion (no better citation available). APPROVE is consistent
+  with severity. The cap-3 discipline (not approving out of fatigue):
+  the smith fixed each rev-1 Critical with a concrete, arithmetic-or-
+  citation-verifiable change. S1 sits closer to S3-precedent
+  (borderline-but-defensible APPROVE) than to S6-precedent (KILL).
+synthesist_forwarding_notes: |
+  Carry forward to synthesist's audit trail:
+  1. Part A workshop-grade-with-Part-B-future-work-flag (smith's §0).
+  2. Swarm-level lesson: "main-track-grade cross-family writer/reviewer
+     measurement requires budget above the swarm's ≤$200 gating allows"
+     — a finding about the swarm's gating, not just about S1.
+  3. Risk-5 memorization confound on AAAI-25 papers as primary residual;
+     Part B held-out post-cutoff probe is the resolution path.
+  4. F1 α≈0.13 workshop-grade statistical power as secondary residual;
+     main-track replication requires larger substrate / more seeds /
+     multiple pairs.
+s1_vs_precedent_alignment:
+  s2_approve_bar_narrower_scope_within_budget: matched
+  s3_approve_bar_borderline_pre_registered: matched
+  s6_kill_bar_scaffolding_no_in_principle_measurement: not_matched
+  alignment_note: |
+    S1's residual is substrate-size + budget (categorically: would
+    measure the effect with more samples). S6's residual was
+    substrate-fit + design-validity (categorically: could not measure
+    the effect even with more samples). S1 is closer to S3 than S6.
+status: complete

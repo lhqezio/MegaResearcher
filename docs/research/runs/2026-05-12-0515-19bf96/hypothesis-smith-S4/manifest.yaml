@@ -1,0 +1,113 @@
+worker_id: hypothesis-smith-S4
+role: hypothesis-smith
+source_gap: S4
+gap_origins: [GAP-A5, GAP-A12, GF-1-Rank-1-tie-audit-trail]
+targeting_gap: "runs/2026-05-12-0515-19bf96/gap-finder-1/output.md#GF-1-Rank-1-tie"
+recommendation: KILL
+kill_rationale: |
+  After revision-2 deep-read of arXiv:2604.24658 (The Last Human-Written Paper),
+  three of S4's four claimed contribution legs are subsumed by the Ara protocol
+  (§2.2: typed dead_end nodes with hypothesis/failure-mode/lesson payload;
+  append-only version-controlled exploration_tree.yaml) and ARA Seal Level 1
+  (§5.2: deterministic machine-verifiable schema-conformance credential, plus
+  Level 2 covering 4 of 5 of S4's proposed binary signals via LLM-rubric
+  grading). The genuine S4 differentiator narrows to a single axis:
+  deterministic-file-signal triggering of dead_end node creation, replacing
+  Ara's LLM-event-routing approach in the Live Research Manager. This narrow
+  trigger-axis contribution is workshop-grade against the spec's main-track
+  ICLR/NeurIPS/ACL bar. Submitting a third revision claiming main-track novelty
+  for the trigger-restriction alone would not survive red-team round 3 and
+  would force user escalation under the 3-revision cap. A clean honest KILL
+  contributes the lessons directly to the audit trail (per discipline rule #1).
+claimed_baseline: |
+  KILL: would-have-been baselines were AI Scientist v2 (arXiv:2504.08066, no-ledger);
+  EvoScientist's LM-judge-mediated ideation memory (arXiv:2603.08127 §3.5);
+  Auto Research's structured run-log in training-recipe domain (arXiv:2605.05724 §3.3);
+  AND, most critically, the Ara protocol + ARA Seal credential from
+  arXiv:2604.24658 (§2.2, §5.2) which is the primary published peer S4 cannot
+  defensibly differentiate from at main-track scale.
+predicted_magnitude: "KILL — no magnitude prediction submitted."
+non_judge_signal: |
+  KILL — the deterministic-file-signal triggering proposal (citation_resolves,
+  ablation_present_in_table, baseline_in_comparison_table,
+  falsification_criterion_count_gte_3, magnitude_claim_has_citation) remains
+  technically non-judge at the trigger surface, but the proposal is being
+  withdrawn at main-track-bar scale. See output.md §5 for the workshop-bar
+  recovery path that future work could take.
+falsifiable: true
+mechanism_grounded: true
+audit_trail_contribution:
+  - lesson_id: S4-L1
+    text: |
+      The audit-trail-as-architectural-discipline space is more contested than
+      gap-finder-1's GF-1-Rank-1 assessed. arXiv:2604.24658's Ara protocol +
+      ARA Seal Level 1 publish the structured-schema + deterministic-measurement-
+      protocol legs. Future work should cite 2604.24658 as primary baseline
+      (not related work), target the deterministic-signal-trigger axis
+      specifically, and compare head-to-head against Ara's Live Research Manager
+      (github.com/Orchestra-Research/Agent-Native-Research-Artifact, 132 stars)
+      on trigger-precision/recall rather than lesson-recovery.
+  - lesson_id: S4-L2
+    text: |
+      Gap-finder dispatch on this run should have surfaced arXiv:2604.24658 at
+      §2.2 / §5.2 depth. Two red-team rounds were burned because the gap-finder's
+      prior-art coverage was sub-depth on the closest peer. Future runs with
+      main-track-conference novelty bar should require gap-finders to do
+      read_paper section=... on top-3 candidate-peer papers, not title-and-
+      abstract scans.
+  - lesson_id: S4-L3
+    text: |
+      Reflexion-magnitude-transfer is structurally weak as a quantitative prior
+      for cross-hypothesis (not multi-trial-same-task) settings. Cross-
+      hypothesis-memory hypotheses should derive predictions from same-class
+      systems' documented effect sizes, not from Reflexion's task-success-rate
+      deltas.
+  - lesson_id: S4-L4
+    text: |
+      For audit-trail measurement claims, lesson keys' upstream LM-judge origin
+      is not erased by SHA-256 hashing. Frozen-hash provides reproducibility,
+      not validity. Future audit-trail measurement work should ground keys in
+      human-annotator labels when available, and explicitly weaken claims to
+      "agreement with a frozen judge baseline" when not.
+  - lesson_id: S4-L5
+    text: |
+      Sample-size + statistical-test choice must be pre-flighted before
+      magnitude is dropped. S4 revision-1 dropped a +25pp prediction in
+      response to red-team I1, then deferred the magnitude floor to a power-
+      driven MDE without computing it — the floor effectively returned to
+      ~+30pp at N=20. Future hypotheses dropping magnitude predictions must
+      compute the resulting power-driven floor in the same revision pass.
+citation_count: 8
+citations:
+  - "2303.11366"  # Reflexion
+  - "2310.01798"  # Huang self-correct ceiling
+  - "2504.08066"  # AI Scientist v2
+  - "2507.08038"  # AblationBench / AuthorAblation
+  - "2603.08127"  # EvoScientist §3.5 direct-read verified
+  - "2605.05724"  # Auto Research with Specialist Agents §3.3 direct-read verified
+  - "2604.24658"  # The Last Human-Written Paper §2.2 + §5.2 direct-read verified (KILL trigger)
+  - "2506.11930"  # Feedback Friction
+citations_removed_revision_1:
+  - id: "2604.13940"
+    reason: "resolves to AI-Assisted Peer Review at Scale: AAAI-26 AI Review Pilot (Biswas et al.), not SPECS-Review-Benchmark. Independent hf_papers search returned no matching paper. Per MegaResearcher discipline rule #4."
+dependencies:
+  hard:
+    - S2-length-control
+    - S3-structured-decision-substrate
+  descope_if_dependency_fails:
+    if_S2_fails: "moot (KILL recommended)"
+    if_S3_fails: "moot (KILL recommended)"
+revision: 2
+status: KILL-recommended-after-redteam-reject-round-2
+revision_changelog:
+  - "REV-2 C1 (Ara overlap): independently re-read arXiv:2604.24658 §2.2 and §5.2 via hf_papers read_paper. Confirmed red-team's reading. Three of four contribution legs subsumed by published prior art."
+  - "REV-2 I1 (F1 MDE): acknowledged; not fixed in this document because Ara overlap is the binding constraint on the KILL decision, not MDE."
+  - "REV-2 I2 (F2 same-model contamination): acknowledged; would be fixed via no-ledger-but-prior-output control arm if proceeding."
+  - "REV-2 I3 (lesson-recovery metric name): acknowledged; would be renamed to 'frozen-baseline agreement rate' if proceeding."
+  - "REV-2 I4 (schema-firewall coverage loss): acknowledged; would add soft_kill_other enum slot if proceeding."
+  - "REV-2 S1/S2/S3: S3 decided in favor of workshop-grade framing → KILL recommendation."
+  - "DECISION: KILL recommended rather than revision-3, per orchestrator's strategic guidance and discipline rule #1 (no silent rejections — lessons contributed to audit trail)."
+falsification_of_kill:
+  - "FK1: if synthesist's read of arXiv:2604.24658 §2.2/§5.2 finds Ara's dead_end nodes are conceptually distinct from S4's ledger in a way the smith missed, reconsider KILL."
+  - "FK2: if synthesist judges spec's main-track bar admits trigger-axis-only contributions (because the swarm output is a punch list, not a single submission), reconsider KILL."
+  - "FK3: if a fourth worker or human reviewer identifies a substantive prior-art gap in the smith's deep-read of arXiv:2604.24658, reconsider KILL."

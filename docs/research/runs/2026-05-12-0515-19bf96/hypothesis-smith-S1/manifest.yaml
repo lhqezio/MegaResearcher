@@ -1,0 +1,58 @@
+role: hypothesis-smith
+worker_id: hypothesis-smith-S1
+source_gap: docs/research/runs/2026-05-12-0515-19bf96/gap-finder-3/output.md#S1
+targeting_gap: docs/research/runs/2026-05-12-0515-19bf96/gap-finder-3/output.md#S1
+upstream_gap_chain:
+  - gap-finder-3 S1 (feasibility-filtered shortlist)
+  - gap-finder-2 GAP-A1 (architectural-pattern gap)
+  - gap-finder-1 Contradiction 5 (auto-reviewer reliability under closed-loop training)
+hypothesis_title: Heterogeneous-model writer/reviewer split on an AI-Scientist-family pipeline lifts SPECS issue-recall over a stage-matched same-family 2-stage baseline (running ARIS Appendix E protocol on SPECS validated subset with cross-family judge protocol)
+claimed_baseline: Stage-matched same-family writer/reviewer 2-stage pipeline (matched on prompt structure, stage count, total token budget, convergence threshold; NOT the AgentRxiv default)
+predicted_magnitude: >=0.05 absolute lift in SPECS issue-recall on 22-perturbation human-consensus-valid subset (arXiv:2604.13940 A.9.4), with paired-difference bootstrap p<0.05 (uncorrected, single comparison), primary {claude, gpt} pair, averaged across writer/reviewer orientations, N=3 seeds; cross-family Gemini judge primary, OpenAI-default judge robustness check
+non_judge_signal: NONE in Part A. CiteME (arXiv:2407.12861) was the rev-1 non-judge primary but red-team NEW-2 identified it as a single-agent retrieval benchmark with poor mechanism fit for writer/reviewer self-bias. Rev-2 accepts the SPECS LM-judge dependence as the trade for substrate-fit + budget compliance. Cross-family judge protocol (judge from family disjoint from both writer and reviewer in every cell) is the best non-same-family signal at the ≤$200 budget ceiling. OpenAI-default judge run as robustness check.
+budget_breakdown_part_a:
+  writer_plus_reviewer_passes: 264 cells @ ~$0.45 = $119
+  cross_family_gemini_judge_passes: 264 cells @ ~$0.20 = $53
+  calibration_pilot: 5 perturbations × 1 orientation × 1 seed = $3
+  buffer_15_percent: $20
+  total_estimate: $195
+  spec_ceiling: $200
+  compliance: yes
+budget_part_b_future_work:
+  three_provider_pairs_full_sweep: ~$700-900 per replication (above ≤$200 ceiling)
+  rationale: workshop-grade Part A in scope; main-track-grade sweep flagged as future-work for synthesist audit trail
+falsification_criteria_count: 4
+revision: 2
+falsifiable: true
+mechanism_grounded: true
+citation_count: 16
+status: revision-2-submission
+prior_red_team_critique: /Users/ggix/MegaResearcher/docs/research/runs/2026-05-12-0515-19bf96/red-team-S1/output.md
+critical_defects_addressed_rev_1:
+  - C1: ARIS repositioned from "adjacent" to inside the gap (preserved)
+  - C2: SPECS demoted, CiteME introduced as primary non-judge (REVERSED in rev-2 per NEW-2)
+  - C3: Stage-matched same-family 2-stage baseline (preserved); magnitude floor raised to ≥0.05 per NEW-3
+  - C4: AgentRxiv §4.1 weakened (preserved)
+  - C5: F4 capability-symmetry as required falsification criterion (preserved; threshold loosened per NEW-4)
+critical_defects_addressed_rev_2:
+  - NEW-1 (budget breach):
+      fix: Concrete descope locked at ≤$200. Single primary pair ({claude, gpt}) with both orientations for F4. Substrate restricted to 22-perturbation SPECS human-consensus-valid subset. 264 cells total. Calibration pilot is a pre-registered cost-feasibility gate (>10% deviation aborts).
+      total_locked: $195
+  - NEW-2 (CiteME substrate-fit):
+      fix: SPECS re-elevated to primary. CiteME demoted to Part B future-work. The smith accepts the SPECS LM-judge dependence as the trade for substrate-fit and budget compliance. Cross-family judge protocol (Gemini judges {claude, gpt} cells; family disjoint from both writer and reviewer) replaces the non-judge claim.
+      tradeoff_acknowledged: loses non-judge purity, gains mechanism fit + budget compliance
+  - NEW-3 (floor/test inconsistency):
+      fix: Bonferroni-3 dropped (only one pair tested). Single-comparison paired-difference bootstrap at α=0.05 uncorrected. Floor raised to ≥0.05 absolute. Smith acknowledges 0.05/0.044 SE ≈ 1.14 → α≈0.13 — workshop-grade statistical claim, not main-track. F1 falsifies on either lift<0.05 OR p≥0.05.
+      honest_residual: workshop-grade pilot acknowledgment in §1 §0 and Risk 6
+important_defects_addressed_rev_2:
+  - NEW-4 (F4 threshold below SD):
+      fix: ±0.02 threshold replaced with ±1 paired-difference SE from same-paper bootstrap (~0.044 expected). Threshold anchored to measurement precision.
+  - NEW-5 (§3.3 grounding):
+      fix: Added Hewitt et al. arXiv:2407.21783 as empirical-distributional grounding for "different family → different priors on flaws." Honest residual: one additional citation, not deeper mechanism.
+  - C1 residual (ARIS-publishes-first):
+      fix: Foregrounded in §1 + §2; one-sentence statement that empirical-priority contribution collapses if ARIS publishes Appendix E first; residual contributions are workshop-grade.
+honest_budget_compliance_statement: Part A budget-compliant at ≤$200 is workshop-grade pilot, NOT main-track contribution. Part B (3-pair full sweep at ~$700-900) flagged as future-work for synthesist audit trail with lesson "main-track-grade cross-family writer/reviewer measurement requires budget above swarm gating allows."
+artifact_paths:
+  output: /Users/ggix/MegaResearcher/docs/research/runs/2026-05-12-0515-19bf96/hypothesis-smith-S1/output.md
+  manifest: /Users/ggix/MegaResearcher/docs/research/runs/2026-05-12-0515-19bf96/hypothesis-smith-S1/manifest.yaml
+  verification: /Users/ggix/MegaResearcher/docs/research/runs/2026-05-12-0515-19bf96/hypothesis-smith-S1/verification.md

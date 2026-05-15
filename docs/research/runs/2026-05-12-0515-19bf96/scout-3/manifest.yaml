@@ -1,0 +1,53 @@
+worker_id: scout-3
+role: literature-scout
+sub_topic: "Automated peer review and paper-quality evaluation — LLM-as-reviewer systems, benchmarks, and known untrustworthy proxies"
+status: complete
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (search, paper_details, find_datasets)
+  - mcp__plugin_megaresearcher_ml-intern__github_examples (one query attempted, returned internal error)
+citation_count: 28
+papers_count: 28
+datasets_count: 5
+implementations_count: 13
+open_questions_flagged: 9
+arxiv_ids:
+  - 2408.06292
+  - 2504.08066
+  - 2412.11948
+  - 2411.00816
+  - 2503.08569
+  - 2510.08867
+  - 2407.12857
+  - 2604.04074
+  - 2604.13940
+  - 2505.14376
+  - 2402.10886
+  - 2508.10308
+  - 2505.03332
+  - 1804.09635
+  - 2310.01783
+  - 2511.15462
+  - 2503.05712
+  - 2505.11855
+  - 2510.18003
+  - 2509.04484
+  - 2406.05688
+  - 2509.19326
+  - 2512.22145
+  - 2510.16549
+  - 2502.19614
+  - 2602.23452
+  - 2506.19882
+  - 2401.15641
+dropped_for_unresolvable_or_unevaluated:
+  - 2604.19792  # OpenCLAW-P2P v6.0 — abstract reads as self-published artifact with no external benchmark evaluation
+known_untrustworthy_proxies_named:
+  - single-shot LLM-as-judge review score
+  - GPT-4 helpfulness self-report from authors
+  - self-evaluation by same-family model in closed-loop systems
+  - reviewer-reviewer overlap rate alone
+  - PeerRead-trained acceptance prediction
+paywall_or_licence_flags:
+  - WestlakeNLP/DeepReview-13K (license:other, derived from OpenReview)
+  - badscientist/BadScientist-Prompts (gated, research-only)
+  - allenai/peer_read (reviewer text from real OpenReview submissions; semi-identifiable)

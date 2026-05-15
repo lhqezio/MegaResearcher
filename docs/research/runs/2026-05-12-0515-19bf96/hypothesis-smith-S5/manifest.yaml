@@ -1,0 +1,78 @@
+role: hypothesis-smith
+shortlist_entry: S5
+targeting_gap: "/Users/ggix/MegaResearcher/docs/research/runs/2026-05-12-0515-19bf96/gap-finder-3/output.md#S5"
+underlying_capability_gap: "/Users/ggix/MegaResearcher/docs/research/runs/2026-05-12-0515-19bf96/gap-finder-1/output.md#Rank-3-Citation-Verification-as-pre-flight-gate"
+revision: 2
+falsifiable: true
+mechanism_grounded: true
+claimed_baseline: |
+  Further-tightened narrow gap claim (revision 2): no AI-Scientist-family
+  end-to-end-experiment-and-paper system (the 14 systems in scout-1's matrix
+  PLUS ARIS arXiv:2605.03042 added in revision 2) implements a
+  block-on-unresolvable, deterministic-resolver, no-LLM-judge citation gate
+  that fires autonomously at emit time. ARIS is the closest peer; its
+  /citation-audit (existence + metadata + context-appropriateness axes) is
+  advisory (human approval gate), LLM-judge based, and bundled — distinct
+  from the proposed gate on three architectural dimensions.
+  The broad gap is NOT claimed — Citegeist (2503.23229), ScholarCopilot
+  (2504.00824), ARISE (2511.17689), ResearchPilot (2603.14629) achieve a
+  stronger constructive guarantee via retrieve-then-write.
+  Contribution magnitude is explicitly contracted: (a) the three-axis
+  architectural delta against ARIS (blocking vs advisory; deterministic vs
+  judge; existence-only vs bundled), and (b) the first published D
+  measurement on PaperWrite-Bench (arXiv:2604.01128).
+notes: |
+  Revision 2 addresses three new critical defects from red-team-S5 round 2:
+  - NEW-C1: ARIS (arXiv:2605.03042) engaged directly. Read §3.1, §3.2, §4.4, §6.
+    Narrow gap claim re-tightened: block-on-unresolvable + deterministic-resolver
+    + existence-only is the architectural delta. ARIS's citation-audit is
+    advisory per §3.2 ("recommendations for human approval before submission")
+    and LLM-judge based ("fresh cross-family reviewers with web access");
+    Stage 1 of the audit cascade per §3.1 is explicit that audits do not
+    halt execution.
+  - NEW-C2: F4 fully deterministic. Off-corpus rate measurement uses
+    `hf_papers paper_details` resolution + Citegeist retrieval-set
+    auditing. No LLM-judge surface anywhere in F4.
+  - NEW-C3: PaperWrite-Bench (arXiv:2604.01128, n=51) migrated to primary
+    eval substrate. AI-Scientist-family n=30 retained as secondary for the
+    family-specific gap claim.
+  Important objections also addressed:
+  - F1 Class A grounded in GSAP-NER (arXiv:2311.09860); F1 Class B regex
+    expanded to cover BLEU/ROUGE/F1/perplexity/loss/latency/FLOPs; 5-manuscript
+    extraction-completeness audit pre-registered.
+  - §3 / §5 inconsistency RESOLVED: rewrite-to-prose is now explicitly counted
+    as a drop under F1's matching rule; Component C's mechanism story
+    narrows to citation-level redundancy alone; D ≤ 15% pre-registered as
+    engineering judgment + redundancy-conditional-on-density ≥ 2.
+  - BibAgent (arXiv:2601.16993) added to S8 sources.
+  R6 (ARIS subsumption) and R7 (citation density < 2 conditional) added to §7.
+citations_resolved:
+  # AI-Scientist-family systems (narrow gap target)
+  - "2408.06292"  # AI Scientist v1
+  - "2504.08066"  # AI Scientist v2
+  - "2503.18102"  # AgentRxiv
+  - "2511.04583"  # Jr. AI Scientist
+  - "2605.03042"  # ARIS (NEW THIS REVISION; 107 upvotes, 8890 stars)
+  # Retrieve-then-write systems
+  - "2503.23229"  # Citegeist
+  - "2504.00824"  # ScholarCopilot
+  - "2511.17689"  # ARISE
+  - "2603.14629"  # ResearchPilot
+  # Citation-verification systems (post-hoc)
+  - "2602.23452"  # CiteAudit
+  - "2511.16198"  # SemanticCite
+  - "2604.04074"  # FactReview
+  - "2407.12861"  # CiteME
+  - "2510.17853"  # CiteGuard
+  - "2411.00294"  # LLM-Ref
+  - "2601.16993"  # BibAgent (NEW THIS REVISION)
+  # Eval-substrate benchmarks
+  - "2604.01128"  # PaperRecon / PaperWrite-Bench (NEW THIS REVISION; PRIMARY EVAL)
+  # Methodology baselines
+  - "2311.09860"  # GSAP-NER (NEW THIS REVISION; F1 CLASS A SUBSTRATE)
+  # Failure-mode quantification (sanity check)
+  - "2601.17431"  # The 17% Gap
+  # Mechanism / discipline grounding
+  - "2310.01798"  # Huang et al. (self-correction)
+  - "2506.11930"  # Feedback Friction
+  - "2509.08713"  # Hidden Pitfalls

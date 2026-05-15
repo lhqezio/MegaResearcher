@@ -1,0 +1,95 @@
+role: eval-designer
+worker_id: eval-designer-S3
+run_id: 2026-05-12-0515-19bf96
+target_hypothesis: S3
+hypothesis_path: docs/research/runs/2026-05-12-0515-19bf96/hypothesis-smith-S3/output.md
+
+datasets_count: 3
+datasets:
+  - name: paperswithcode-baseline-list
+    snapshot: 2026-01-01
+    licence: CC-BY-SA-4.0
+    decisions: 360
+  - name: abgen-testmini-500-sample100
+    arxiv: 2507.13300
+    seed: 42
+    licence: CC-BY-4.0
+    decisions: 600
+  - name: citeme-shape-attribution
+    arxiv: 2407.12861
+    licence: CC-BY-4.0
+    decisions: 120
+total_decisions: 1080
+
+baselines_count: 5
+baselines:
+  - id: B0
+    desc: AI Scientist v2 single-draft T=0.7
+    role: prior-art
+  - id: B1
+    desc: vote-of-5 at T=0.7 (primary treatment)
+    role: treatment
+  - id: B3
+    desc: vote-of-5 at T=1.0 (diversity contrast)
+    role: ablation
+  - id: B-trivial
+    desc: random binary at empirical class prior
+    role: sanity
+  - id: B-ablation
+    desc: 5 sequential drafts T=0.7 last-wins (no vote)
+    role: compute-confound-control
+
+falsification_experiments_count: 5
+falsification_experiments:
+  - id: F1
+    criterion: effect-size-floor
+    rule: "Delta_DHR < +3pp -> FAIL"
+  - id: F2
+    criterion: statistical-floor
+    rule: "McNemar p >= 0.001 -> unsupported"
+  - id: F3
+    criterion: variance-floor
+    rule: "Hamming agreement at T=0.7 < 0.20 -> FAIL"
+  - id: F4
+    criterion: compute-confound
+    rule: "B-ablation within +3pp of B1 -> aggregation-mechanism falsified"
+  - id: F5
+    criterion: pilot-extraction
+    rule: "Pilot lexicon accuracy < 0.85 -> abort or rescope"
+
+primary_statistical_test: McNemar-paired
+alpha: 0.001
+practical_effect_floor_pp: 6
+power_estimate_at_delta_6: 0.94
+
+estimated_compute_hours: 4
+expected_cost_usd: 140
+expected_cost_usd_untrimmed: 359
+flagged_intractable: false
+
+trim_applied:
+  - "Dropped T=0.5 arm (substituted by Hamming-direct reporting on B1)"
+  - "Dropped replication seed=99 (substituted by 10k stratified bootstrap on seed=42)"
+
+residual_limitations_flagged:
+  - "I-B: single seed only; model-stochastic variance not directly measured"
+  - "I-C: T=0.5 monotone-temperature claim cannot be made"
+
+decision_rules:
+  - pass-main-track
+  - pass-workshop-effect-size
+  - pass-workshop-compute-confound
+  - fail
+  - variance-floor
+  - homogeneity-floor
+  - abort-pilot
+  - rescope-pilot
+
+frozen_artifacts_pre_flight:
+  - frozen-baselines.json
+  - frozen-axes.json
+  - frozen-excerpts.json
+  - frozen-seeds.json
+  - frozen-prompts.json
+
+status: complete

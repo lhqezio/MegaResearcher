@@ -1,0 +1,38 @@
+worker_id: scout-5
+role: literature-scout
+sub_topic: Multi-agent critique, debate, and revision loops — generic patterns (debate, reflection, constitutional, self-rewarding, ToT, adversarial collaboration, multi-agent finetuning) with empirical magnitudes and null/negative results
+citation_count: 15
+papers_count: 15
+datasets_count: 13
+implementations_count: 15
+open_questions_flagged: 7
+arxiv_ids:
+  # Group A — Foundational refinement / reflection
+  - 2303.17651  # Self-Refine
+  - 2303.11366  # Reflexion
+  - 2305.19118  # Liang et al. MAD / Degeneration-of-Thought
+  # Group B — Multi-agent debate + critiques
+  - 2305.14325  # Du et al. MAD
+  - 2305.10601  # Tree of Thoughts
+  - 2310.01798  # LLMs Cannot Self-Correct Reasoning Yet
+  - 2502.08788  # Stop Overvaluing MAD
+  - 2508.17536  # Debate or Vote
+  # Group C — Self-rewarding / meta-rewarding
+  - 2401.10020  # Self-Rewarding LMs
+  - 2407.19594  # Meta-Rewarding
+  # Group D — Constitutional
+  - 2212.08073  # Constitutional AI
+  # Group E — Limits
+  - 2506.11930  # Feedback Friction
+  - 2505.24726  # Reflect, Retry, Reward
+  # Group F — Critic-side
+  - 2501.05727  # SCRIT
+  # Group G — Domain-adjacent peer-review debate
+  - 2502.14767  # Tree-of-Debate
+additional_arxiv_ids_referenced_in_open_questions:
+  - 2305.11738  # CRITIC
+  - 2402.11436  # Pride and Prejudice (self-bias)
+  - 2510.24320  # Critique-RL
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (search, paper_details, read_paper)
+status: complete

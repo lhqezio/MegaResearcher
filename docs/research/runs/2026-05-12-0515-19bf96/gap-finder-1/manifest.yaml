@@ -1,0 +1,23 @@
+worker_id: gap-finder-1
+focus: capability gaps across the autonomous-research-systems genre
+slice:
+  - docs/research/runs/2026-05-12-0515-19bf96/scout-1/output.md
+  - docs/research/runs/2026-05-12-0515-19bf96/scout-2/output.md
+  - docs/research/runs/2026-05-12-0515-19bf96/scout-3/output.md
+  - docs/research/runs/2026-05-12-0515-19bf96/scout-4/output.md
+systems_analyzed: 14
+capabilities_assessed: 11
+matrix:
+  rows: 14
+  cols: 11
+  total_cells: 154
+  populated_cells: 142
+  unknown_cells: 12
+  population_rate: 0.922
+gaps_count: 8
+contradictions_count: 5
+search_gaps_count: 7   # capability claims searched but slice silent
+discarded_count: 4
+verification_queries_logged: 13
+citation_count: 47     # unique arXiv IDs cited across output.md
+status: complete

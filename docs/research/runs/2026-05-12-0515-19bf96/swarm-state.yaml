@@ -1,0 +1,178 @@
+run_id: 2026-05-12-0515-19bf96
+spec: docs/research/specs/2026-05-12-megaresearcher-paper-pipeline-spec.md
+plan: docs/research/plans/2026-05-12-megaresearcher-paper-pipeline-plan.md
+novelty_target: hypothesis
+max_parallel: 4
+started_at: 2026-05-12T05:15:00Z
+phases:
+  phase_1_literature_scout:
+    status: completed
+    total_citations: 141
+    workers:
+      - id: scout-1
+        sub_topic: end-to-end autonomous-research systems
+        status: completed
+        citation_count: 27
+        systems_detailed: 14
+        verification: pass
+        notes: "Coscientist, Virtual Lab, Genesis-Flow flagged not-in-arxiv-index per discipline rule"
+      - id: scout-2
+        sub_topic: manuscript drafting and document-scale coherence
+        status: completed
+        citation_count: 26
+        verification: pass
+      - id: scout-3
+        sub_topic: automated peer review and paper-quality evaluation
+        status: completed
+        citation_count: 28
+        verification: pass
+        notes: "5 known-untrustworthy proxies named for eval-designer"
+      - id: scout-4
+        sub_topic: experiment execution and verification in agent systems
+        status: completed
+        citation_count: 24
+        verification: pass
+      - id: scout-5
+        sub_topic: multi-agent critique, debate, and revision loops
+        status: completed
+        citation_count: 18
+        verification: pass
+        notes: "3 negative-result papers identified (Huang 2310.01798, Zhang 2502.08788, Choi 2508.17536); Feedback Friction 2506.11930 caps revision-loop hypotheses"
+      - id: scout-6
+        sub_topic: memory and state management for long agent workflows
+        status: completed
+        citation_count: 18
+        verification: pass
+        notes: "FS-Researcher + Git Context Controller named as architectural precedents"
+  phase_2_gap_finder:
+    status: completed
+    shortlist_handoff: [S1, S2, S3, S4, S5, S6]
+    workers:
+      - id: gap-finder-1
+        focus: capability gaps across the genre
+        status: completed
+        matrix_population: 0.922
+        ranked_gaps: 8
+        contradictions: 5
+        discarded_candidates: 4
+        verification: pass
+      - id: gap-finder-2
+        focus: architectural-pattern gaps
+        status: completed
+        gaps_surfaced: 12
+        high_plausibility: 4
+        killed_candidates: 5
+        verification: pass
+      - id: gap-finder-3
+        focus: feasibility-filtered gaps
+        status: completed
+        shortlist_count: 6
+        killed_count: 10
+        verification: pass
+        attack_order: [S1, S2, S5, S6, S3, S4]
+        precondition_note: "S2 is precondition for S3/S4; pause if S1+S2 both die"
+  phase_3_hypothesis_smith:
+    status: completed
+    workers:
+      - id: hypothesis-smith-S1
+        status: completed
+        baseline: AgentRxiv (2503.18102) same-family writer+reviewer
+        falsification_signal: SPECS-Review-Benchmark binary flaw-detection rate
+      - id: hypothesis-smith-S2
+        status: completed
+        baseline: AgentRxiv §4.1 reward-hacking pattern
+        falsification_signal: regression coefficients (β_raw, β_norm) on token-count vs score
+      - id: hypothesis-smith-S3
+        status: completed
+        baseline: AI Scientist v2 single-draft
+        falsification_signal: decision-hit-rate vs accepted-version ground truth (deterministic)
+      - id: hypothesis-smith-S4
+        status: completed
+        baseline: AI Scientist v2, EvoScientist
+        falsification_signal: lesson-recovery rate (AblationBench-derived key) + incorporation rate (file diff)
+        retry_succeeded: true
+      - id: hypothesis-smith-S5
+        status: completed
+        baseline: AI Scientist v2, AgentRxiv hallucination rate
+        falsification_signal: citation resolution rate (deterministic) + substantive-claim drop rate D
+      - id: hypothesis-smith-S6
+        status: completed
+        baseline: AI Scientist v2, AI-Researcher AblationBench coverage
+        falsification_signal: AblationBench AuthorAblation recall@5 (binary) + flag incorporation rate
+  phase_4_red_team:
+    status: completed
+    survivors: [S1, S2, S3]
+    killed: [S4, S5, S6]
+    workers:
+      - hypothesis: S2
+        verdict: APPROVE
+        revision: 1
+        notes: "Bias Fitting (2505.12843) substrate; forecast framing; BadScientist acknowledged; budget $235 ($35 over ceiling, flagged)"
+      - hypothesis: S6
+        verdict: KILL
+        revision: 1
+        notes: "Mechanism collapse — file-handoff vs in-context has no published prior; lesson preserved in audit trail"
+      - hypothesis: S3
+        verdict: APPROVE
+        revision: 2
+        notes: "+6 floor with Patel-anchored 30% discount; AbGen testmini-500 + 5 canonical leaderboards as deterministic substrates; main-track-borderline contribution"
+      - hypothesis: S5
+        verdict: KILL
+        revision: 2
+        notes: "All 3 CR defects addressed cleanly but contracted to workshop-magnitude; S6 precedent applied"
+      - hypothesis: S1
+        verdict: APPROVE
+        revision: 2
+        notes: "Workshop-grade pilot (Part A, $195) with Part B future-work flag; distinguished from S6 precedent because design CAN measure effect — budget caps substrate-size not design-validity; aligns with S3-borderline-APPROVE pattern"
+  phase_5_eval_designer:
+    status: completed
+    workers:
+      - id: eval-designer-S1
+        target: S1
+        budget_usd: 192.60
+        sample_size: 264
+        flagged_intractable: false
+      - id: eval-designer-S2
+        target: S2
+        budget_usd: 200
+        sample_size: 150
+        flagged_intractable: false
+      - id: eval-designer-S3
+        target: S3
+        budget_usd: 140
+        sample_size: 1080
+        flagged_intractable: false
+  phase_6_synthesist:
+    status: completed
+    workers:
+      - id: synthesist
+        status: completed
+        word_count: 7652
+        page_count_approx: 11
+        citation_count: 89
+        banned_phrase_violations: 0
+        sections_required: 9
+        sections_present: 9
+escalations: []
+killed_hypotheses:
+  - id: S6
+    name: Ablation-coverage checklist worker
+    killed_at_revision: 1
+    kill_reason: "Mechanism collapse — file-handoff vs in-context distinction has no published prior; +3 F1pp threshold unanchored inside AblationBench LMJudge noise floor; smith's own §0 conceded scaffolding-not-primary"
+    lesson_contributed: "Gap is real (no AI-Scientist-family system integrates external rubric via cross-wave file handoff) and substrate exists, but architectural distinction does not survive diagnostic arm. Future work: find published prior establishing why file-handoff differs from in-context concatenation before designing the experiment."
+  - id: S5
+    name: Citation pre-flight verification gate
+    killed_at_revision: 2
+    kill_reason: "Smith addressed all 3 CR defects cleanly (ARIS engagement, F4 deterministic, PaperWrite-Bench substrate) but the contracted contribution is workshop-magnitude. Spec targets main-track-conference bar; workshop-grade is below the floor. S6 precedent applied consistently."
+    lesson_contributed: "Three-axis ARIS delta (block vs advise; deterministic vs LLM-judge; existence-only vs bundled) + PaperWrite-Bench D measurement + GSAP-NER-grounded F1 taxonomy + Citegeist three-way F4 classification = concrete starting point for future workshop work on citation hardening in AI-Scientist-family pipelines."
+  - id: S4
+    name: Rejected-hypothesis ledger keyed to structured binary signals
+    killed_at_revision: 2
+    kill_reason: "Smith self-recommended KILL after independent deep-read of arXiv:2604.24658 confirmed red-team's revision-2 objection: 3 of 4 contribution legs (schema-enforced-scoping, append-only-ledger, measurement-protocol) are substantially subsumed by published Ara protocol + ARA Seal Level 1 (132-star GitHub impl). Only deterministic-file-signal-trigger leg remains genuinely novel — workshop-grade not main-track."
+    lesson_contributed: "5 structured lessons (S4-L1 through S4-L5): the audit-trail-as-architectural-discipline space is more contested than gap-finder-1 assessed; Ara protocol + ARA Seal covers most of it; the LLM-event-routing-vs-deterministic-trigger axis is the genuinely unexplored differentiator; named-baseline comparison against Ara is required for any future work; workshop-bar recovery path documented in §5 of smith output."
+retry_counts:
+  hypothesis-smith-S4: 3
+  hypothesis-smith-S3: 2
+  hypothesis-smith-S5: 2
+  hypothesis-smith-S1: 2
+  hypothesis-smith-S6: 1

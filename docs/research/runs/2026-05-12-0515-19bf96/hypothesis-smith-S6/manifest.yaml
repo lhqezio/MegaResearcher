@@ -1,0 +1,40 @@
+role: hypothesis-smith
+worker_id: hypothesis-smith-S6
+targeting_gap: docs/research/runs/2026-05-12-0515-19bf96/gap-finder-3/output.md#S6
+revision: 1
+falsifiable: true
+mechanism_grounded: true
+shortlist_entry: S6
+shortlist_source_gaps:
+  - docs/research/runs/2026-05-12-0515-19bf96/gap-finder-1/output.md#Rank-1-tied-Ablation-Discipline
+  - docs/research/runs/2026-05-12-0515-19bf96/scout-3/output.md#5-2-workshop-main-track-delta
+claimed_baseline: "No AI-Scientist-family pipeline integrates an external ablation-coverage rubric as a worker with cross-wave file handoff. (Narrowed from revision-0 'no system coverage-checks externally' per red-team C1: AblationBench's LM-Planner already uses the rubric as a single-call prompt; the empty cell is the system-integration / cross-wave file-handoff layer, not the rubric-prompt scaffolding.)"
+primary_metric: "F1@5 on AblationBench AuthorAblation (LM-judge-mediated via AblationBench's cross-family majority-vote-of-3 LMJudge, 0.74 F1 vs humans per arXiv:2507.08038 §7.3 Table 3)"
+primary_metric_threshold: "Δ F1@5 ≥ +0.03 absolute over max(B1=LM-Planner Claude 3.5 Sonnet, B2=AI Scientist v2, B3=AI-Researcher), lower 95% paired-bootstrap CI bound > 0"
+co_primary_metric: "Deterministic file-diff incorporation rate of named flags from ablation-coverage.yaml into eval-designer wave-2 protocol; composite ≥3 flags/paper AND ≥60% incorporation AND ≥50% GT-hit precision (no LLM judge in this signal)"
+non_judge_signal: "DETERMINISTIC (no judge): file-diff incorporation rate per F2. LM-JUDGE-MEDIATED (with cross-family majority-vote-of-3): AblationBench LMJudge for F1@5 per arXiv:2507.08038 §4.3. Honest framing per red-team C3: the AblationBench falsifier is LM-judge-mediated; the deterministic falsifier (F2) is co-primary, not secondary."
+robustness_substrate: "AbGen testmini human-evaluation column (arXiv:2507.13300 §3.2 Likert 1–5 on importance/faithfulness/soundness); added in revision-1 per red-team C4"
+falsification_criteria_count: 3
+risks_documented: 4
+sources_verified_count: 10
+sources_verified:
+  - 2507.08038
+  - 2507.13300
+  - 2506.11930
+  - 2504.08066
+  - 2505.18705
+  - 2408.06292
+  - 2503.18102
+  - 2509.08713
+  - 2502.16069
+  - 2510.18003
+red_team_round_1_critical_objections_addressed:
+  C1_mechanism_collapse: "Reframed novel mechanism from rubric-promotion (which IS the LM-Planner baseline per AblationBench §4.2) to cross-wave file-handoff substrate. Predicted Δ reduced accordingly."
+  C2_metric_substitution: "Locked primary metric to F1@5 (matching AblationBench §7.4 reported metric). Reduced predicted Δ from +10pp recall@5 to +3pp F1@5."
+  C3_non_judge_claim_false: "Acknowledged AblationBench AuthorAblation is LM-judge-mediated per §4.3; elevated deterministic file-diff incorporation rate (F2) to co-primary, not secondary. Both falsifiers must pass."
+  C4_AbGen_omission: "Added AbGen (arXiv:2507.13300) as robustness substrate with its human-evaluation Likert column, not its automated column. Verified via paper_details."
+honest_disclosure: "Predicted lift (+3 F1pp) is not a main-track-conference primary contribution by itself. The synthesist should position S6 as system-integration scaffolding rather than primary contribution. This is explicit per the revision-1 instructions."
+artifacts:
+  - output.md
+  - manifest.yaml
+  - verification.md

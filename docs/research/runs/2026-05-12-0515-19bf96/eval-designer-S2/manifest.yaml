@@ -1,0 +1,140 @@
+role: eval-designer
+worker_id: eval-designer-S2
+run_id: 2026-05-12-0515-19bf96
+target: S2
+hypothesis_path: docs/research/runs/2026-05-12-0515-19bf96/hypothesis-smith-S2/output.md
+red_team_verdict_path: docs/research/runs/2026-05-12-0515-19bf96/red-team-S2/output.md
+red_team_verdict: APPROVE
+
+# Required eval-designer manifest fields
+datasets_count: 3
+baselines_count: 5
+falsification_experiments_count: 4
+ablations_count: 6
+
+# Budget decision (per smith I-new-4 trim-vs-accept)
+trim_decision: TRIM
+trim_actions:
+  - drop_verbosity_variant_4_to_3
+  - drop_optional_LimitGen_sanity_check
+  - add_2call_averaging_on_held_out_primary_judge
+expected_cost_usd: 200
+budget_ceiling_usd: 200
+flagged_intractable: false
+
+# Sample sizes
+sample_size:
+  calibration_corpus_primary_ICLR: 150
+  calibration_corpus_secondary_AI_Scientist: 75
+  held_out_manuscripts: 20
+  held_out_variants_per_manuscript: 3
+  held_out_judge_calls_per_cell: 2  # 2-call averaging on primary judge
+  f4_known_good_bad_pairs: 20
+  substrate_reserve: 10
+  judge_models: 3  # gpt-5, claude-sonnet-4.5, gpt-4.1 (primary)
+  total_held_out_judge_calls: 240  # 20*3*(2+1+1) = 60 primary 2-call + 30 gpt-5 + 30 gpt-4.1 single-call (eval-designer §8.2)
+
+# Power analysis summary
+power_analysis:
+  primary_beta_MDE: 0.22  # score units per log-token, alpha=0.05 one-sided, 80% power
+  primary_MDE_assumption_judge_call_SD: 0.4
+  primary_MDE_assumption_within_manuscript_var_log_token: 0.080
+  F4_AUROC_MDE_absolute: 0.05
+  F3_Spearman_rho_MDE_Bonferroni: 0.30
+
+# Decision rules (pre-registered)
+decision_rules:
+  SUPPORTED:
+    beta_raw_95CI: ">0"
+    beta_norm_95CI: "brackets 0"
+    DiD_95CI: ">0 (positive side)"
+    F3_proxies: "no fire with Bonferroni alpha=0.05/8"
+    F4_AUROC_drop_absolute: "<=0.05"
+  FAIL_F1_graceful_no_op:
+    beta_raw_95CI: "brackets 0"
+    note: "graceful no-op per smith I4; survey finding, not falsification of broader hypothesis"
+  FAIL_F2:
+    beta_norm_95CI: ">0 (still significantly positive after wrapper)"
+  FAIL_F4:
+    F4_AUROC_drop_absolute: ">0.05"
+  PARTIAL_F3_surface:
+    F3_proxy: "any of 1-5 fires"
+    recommendation: "pair with surface-formatting normalization (GAP-A4)"
+  PARTIAL_F3_substantive:
+    F3_proxy: "any of 6-8 fires"
+    recommendation: "pair with content-fabrication detection (RBD 2505.17100 or BadScientist ReD)"
+  PARTIAL_suppression:
+    condition: "0 < beta_norm 95CI excludes 0, beta_norm < beta_raw, DiD 95CI > 0"
+  INTRACTABLE:
+    condition: "not triggered; trim under $200 succeeded"
+
+# Pre-registered F3 proxy list (locked)
+F3_proxies:
+  surface_textual:
+    - section_count
+    - citation_count
+    - bullet_list_count
+    - LaTeX_formatting_density
+    - hedging_word_count
+  substantive_BadScientist_inspired:
+    - improvement_magnitude_plausibility  # regex on % claims
+    - claim_vs_result_table_match  # deterministic numerical-claim-vs-table-cell match (I-new-3 fix)
+    - presence_of_baseline_CI  # regex on confidence interval notation
+
+# Datasets used (all real HF dataset IDs)
+datasets:
+  - id: DeepNLP/ICLR-2024-Accepted-Papers
+    role: primary_calibration_held_out_F4
+    verified: true
+    license: not_declared_pdfs_public_OpenReview
+  - id: badscientist/BadScientist-Prompts
+    role: F3_substantive_proxy_taxonomy_reference
+    verified: true
+    license: MIT_research_only
+  - id: yale-nlp/LimitGen
+    role: considered_and_rejected_optional_sanity_check
+    verified: true_but_HF_preview_empty
+    license: see_paper
+
+# Baselines (pre-registered)
+baselines:
+  - id: B0
+    name: un_wrapped_control
+    rationale: AI-Scientist-family default + sanity baseline
+  - id: B1
+    name: prompt_instruction_ignore_length
+    rationale: cheap_fix baseline; does instruction prefix close the gap?
+  - id: B2
+    name: Bias_Fitting_wrapper_HYPOTHESIS
+    rationale: the hypothesis under test (arXiv:2505.12843)
+  - id: B3
+    name: linear_debias_ablation
+    rationale: ablation of non-linear fit (M5); Bias Fitting paper §4.2 comparator
+  - id: B4
+    name: trivial_constant_baseline
+    rationale: sanity check that judges have non-trivial discrimination
+
+# Threats explicitly addressed (red-team objections)
+threats_addressed:
+  - id: I-new-1
+    description: Bias_Fitting_protocol_extrapolation_to_API_judge
+    mitigation: documented_explicitly_plus_A3_linear_vs_resnet_ablation_plus_A4_corpus_size
+  - id: I-new-2
+    description: calibration_corpus_generalization_ICLR_human_vs_AI_Scientist_runtime
+    mitigation: secondary_calibration_corpus_plus_A2_ablation
+  - id: I-new-3
+    description: F3_proxy_7_LLM_dependence
+    mitigation: re_specified_as_deterministic_regex_only_for_numerical_claims
+  - id: I-new-4
+    description: budget_over_200
+    mitigation: trim_decision_to_190_to_200_documented_explicitly_in_section_8
+
+# Compute estimate
+estimated_compute_hours: 9
+hardware: API_calls_only_no_GPU_required
+wall_clock_estimate: 8h_API_plus_1h_analysis
+
+# Verification status
+all_citations_verified: true_except_2504.08066_flagged_in_verification_md
+pre_registration_committed: true
+no_peeking_commitment: documented_in_section_1

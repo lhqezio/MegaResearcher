@@ -1,0 +1,41 @@
+worker_id: scout-6
+role: literature-scout
+run_id: 2026-05-12-0515-19bf96
+sub_topic: >-
+  Memory and state management for long agent workflows — hierarchical memory,
+  structured-artifact passing, KV-cache management, external scratchpads,
+  vector memory, episodic memory, work-product handoff between agents,
+  with emphasis on compatibility with stateless leaf-worker dispatch and
+  file-based artifact handoff.
+papers_count: 17
+datasets_count: 8
+implementations_count: 10
+open_questions_flagged: 8
+citation_count: 23
+arxiv_ids:
+  - "2505.18705"  # AI-Researcher (anchor paper, §6.2 gap)
+  - "2310.08560"  # MemGPT
+  - "2506.06326"  # MemoryOS
+  - "2502.12110"  # A-MEM
+  - "2507.07957"  # MIRIX
+  - "2511.18423"  # General Agentic Memory (GAM)
+  - "2407.04363"  # AriGraph
+  - "2304.03442"  # Generative Agents
+  - "2602.01566"  # FS-Researcher
+  - "2508.00031"  # Git Context Controller
+  - "2310.02003"  # L2MAC
+  - "2602.19320"  # Anatomy of Agentic Memory
+  - "2512.13564"  # Memory in the Age of AI Agents (survey)
+  - "2412.10319"  # SCBench
+  - "2507.07400"  # KVFlow
+  - "2510.12872"  # KVCOMM
+  - "2509.21766"  # UltraHorizon
+  - "2510.27246"  # Beyond a Million Tokens (BEAM / LIGHT)
+  - "2506.07398"  # G-Memory
+  - "2412.15266"  # On the Structural Memory of LLM Agents
+  - "2303.11366"  # Reflexion
+  - "2506.21605"  # MemBench
+  - "2408.09559"  # HiAgent
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (search, paper_details, read_paper)
+status: complete

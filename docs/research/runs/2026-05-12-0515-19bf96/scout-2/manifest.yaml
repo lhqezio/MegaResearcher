@@ -1,0 +1,46 @@
+role: literature-scout
+worker_id: scout-2
+sub_topic: "Manuscript drafting and document-scale coherence: hierarchical outline-driven drafting, retrieval-augmented manuscript generation, citation-anchored writing, cross-section coherence checking, and document-scale RL — across both purpose-built scientific-manuscript systems and transferable general-long-document techniques (2023–2026)."
+papers_count: 26
+datasets_count: 13
+implementations_count: 17
+open_questions_flagged: 10
+citation_count: 33
+arxiv_ids:
+  - "2402.14207"  # STORM
+  - "2408.15232"  # Co-STORM
+  - "2408.07055"  # LongWriter
+  - "2506.18841"  # LongWriter-Zero
+  - "2503.00751"  # RAPID
+  - "2504.05732"  # LLMxMapReduce-V2
+  - "2408.06292"  # AI Scientist v1
+  - "2504.08066"  # AI Scientist v2
+  - "2505.18705"  # AI-Researcher
+  - "2511.04583"  # Jr. AI Scientist
+  - "2501.04227"  # Agent Laboratory
+  - "2503.18102"  # AgentRxiv
+  - "2406.10252"  # AutoSurvey
+  - "2503.04629"  # SurveyForge
+  - "2502.14776"  # SurveyX
+  - "2510.07733"  # SurveyG
+  - "2506.12689"  # SciSage
+  - "2509.19370"  # Meow
+  - "2503.23229"  # Citegeist
+  - "2407.12861"  # CiteME
+  - "2412.14860"  # Think&Cite
+  - "2305.06983"  # FLARE
+  - "2409.16191"  # HelloBench
+  - "2502.19103"  # LongEval
+  - "2510.03120"  # SurveyBench
+  - "2509.08713"  # Hidden Pitfalls of AI Scientist Systems
+  - "2309.11495"  # Chain-of-Verification
+  - "2412.08268"  # LCFO (dataset)
+  - "2405.01930"  # OARelatedWork (dataset)
+  - "2510.15624"  # freephdlabor (impl)
+  - "2403.02270"  # FENICE (impl)
+  - "2601.17431"  # The 17% Gap (open questions)
+  - "2502.14297"  # Sakana AI Scientist evaluation (referenced)
+tools_used:
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (search)
+  - mcp__plugin_megaresearcher_ml-intern__hf_papers (paper_details)
+status: complete

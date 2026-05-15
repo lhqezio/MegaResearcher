@@ -1,0 +1,38 @@
+role: gap-finder
+worker_id: gap-finder-2
+focus: architectural-pattern gaps — generic multi-agent / memory patterns vs paper-generation systems
+slice:
+  - scout-5/output.md  # multi-agent critique / debate / revision (15 generic patterns + 3 negative-result ceilings)
+  - scout-6/output.md  # memory and state management (18 systems, stateless-dispatch tags)
+  - scout-1/output.md  # end-to-end autonomous-research systems (19+ paper-gen systems)
+patterns_assessed: 14
+  # heterogeneous-model debate, majority voting / N-sample ensembling,
+  # tree-of-thought search over revision states, Reflexion-style external-reward
+  # episodic reflection, constitutional / principle-guided critique, self-rewarding
+  # iterative DPO / meta-rewarding, Tree-of-Debate persona, falsification-first
+  # revision, A-MEM auto-linking + memory evolution, AriGraph entity knowledge
+  # graph, Git Context Controller versioned context, FS-Researcher persistent
+  # workspace, MIRIX typed-memory taxonomy, Meta-Rewarding length-control wrapper,
+  # pre-registration of decision rules
+systems_analyzed: 15
+  # AI Scientist v1, AI Scientist v2, Agent Laboratory, AgentRxiv, AI-Researcher,
+  # Dolphin, EvoScientist, freephdlabor, Jr. AI Scientist, CycleResearcher,
+  # PaperOrchestra, Idea2Paper, Curie, Baby-AIGS, ARIS (adjacent, not strictly
+  # AI-Scientist family — included to surface partial coverage)
+gap_count: 12
+  # GAP-A1 through GAP-A12; 4 HIGH-plausibility, 5 MEDIUM, 2 MEDIUM-LOW,
+  # 1 LOW-MEDIUM
+discarded_count: 5
+  # KILL-1: centralized multi-round debate
+  # KILL-2: pure intrinsic same-model self-correction on prose
+  # KILL-3: length-extending LLM-as-judge revision loops without length-control
+  # KILL-4: A-MEM evolution with aggressive consolidation cadence
+  # KILL-5: Tree-of-Thoughts over free-prose revision without partial-state evaluator
+verification_queries_run: 11
+citation_count: 42
+status: complete
+notes:
+  - "Hard constraint observed: every pattern in the matrix passes stateless-dispatch + file-handoff. KV-cache patterns (KVFlow, KVCOMM, SCBench) and RL-trained controllers (MemPO, DeltaMem, Mem-T, MemGen) flagged out-of-scope and listed only in §(d) future-work."
+  - "Negative-result ceilings (2310.01798, 2502.08788, 2508.17536, 2506.11930) explicitly cited in every plausibility score and in §(c) kill list."
+  - "ARIS (arXiv:2605.03042) discovered via verification query — partially covers GAP-A1 (cross-model adversarial collaboration in autonomous research) but is not a member of the AI-Scientist family; surfaced honestly in matrix + GAP-A1 entry rather than suppressed."
+  - "Two papers from verification queries that *initially looked like they closed gaps* but on inspection did not: IRIS (2504.16728 — MCTS for ideation only, not revision); 2501.14917 Hegelian Dialectic with Multi-Agent Majority Voting (only for novelty assessment in ideation, not over completed drafts)."

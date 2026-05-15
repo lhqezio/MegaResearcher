@@ -1,0 +1,63 @@
+role: literature-scout
+worker_id: scout-1
+sub_topic: End-to-end autonomous-research systems — full pipelines that take a topic and produce a paper-shaped output (AI Scientist v1/v2, AI-Researcher, Agent Laboratory, AgentRxiv, Dolphin, EvoScientist, freephdlabor, Idea2Paper, Jr. AI Scientist, CycleResearcher, PaperOrchestra, Aviary, Curie, Baby-AIGS, ResearchAgent, VirSci, SciDER, Medical AI Scientist, and contemporaries).
+start_time: 2026-05-12T05:15Z
+end_time: 2026-05-12T05:55Z
+status: complete
+papers_count: 27
+datasets_count: 10
+implementations_count: 14
+open_questions_flagged: 10
+citation_count: 27
+tools_used:
+  - mcp__ml-intern__hf_papers (search, paper_details, read_paper)
+  - mcp__ml-intern__web_search (for Coscientist and Virtual Lab — both confirmed non-arXiv and flagged)
+arxiv_ids:
+  - 2408.06292   # AI Scientist v1
+  - 2504.08066   # AI Scientist v2
+  - 2501.04227   # Agent Laboratory
+  - 2503.18102   # AgentRxiv
+  - 2505.18705   # AI-Researcher
+  - 2501.03916   # Dolphin
+  - 2603.08127   # EvoScientist
+  - 2510.15624   # freephdlabor
+  - 2601.20833   # Idea2Story / Idea2Paper
+  - 2511.04583   # Jr. AI Scientist
+  - 2411.00816   # CycleResearcher
+  - 2604.05018   # PaperOrchestra
+  - 2412.21154   # Aviary
+  - 2502.16069   # Curie
+  - 2411.11910   # Baby-AIGS / AIGS
+  - 2404.07738   # ResearchAgent
+  - 2509.08713   # The More You Automate, the Less You See
+  - 2601.03315   # Why LLMs Aren't Scientists Yet
+  - 2410.09403   # VirSci
+  - 2603.01421   # SciDER
+  - 2603.28589   # Medical AI Scientist
+  - 2602.15112   # ResearchGym
+  - 2510.10472   # FML-bench
+  - 2510.21652   # AstaBench
+  - 2310.03302   # MLAgentBench
+  - 2409.11363   # CORE-Bench
+  - 2503.01424   # From Hypothesis to Publication (survey)
+flagged_non_arxiv:
+  - "Coscientist (Boiko et al., Nature 2023, DOI 10.1038/s41586-023-06792-0) — not indexed in hf_papers; included narratively only"
+  - "Virtual Lab (Swanson/Zou et al., Nature 2025; bioRxiv 10.1101/2024.11.11.623004) — not indexed in hf_papers; included narratively only"
+detail_systems_count: 14
+# 14 systems have the full required-fields treatment (agent roster, loops, artifact format, evaluation, limitations) — exceeds the >=8 floor.
+detail_systems:
+  - The AI Scientist v1 (2408.06292)
+  - The AI Scientist-v2 (2504.08066)
+  - Agent Laboratory (2501.04227)
+  - AgentRxiv (2503.18102)
+  - AI-Researcher (2505.18705)
+  - Dolphin (2501.03916)
+  - EvoScientist (2603.08127)
+  - freephdlabor (2510.15624)
+  - Idea2Paper (2601.20833)
+  - Jr. AI Scientist (2511.04583)
+  - CycleResearcher (2411.00816)
+  - PaperOrchestra (2604.05018)
+  - Aviary (2412.21154)
+  - Curie (2502.16069)
+  - Baby-AIGS (2411.11910)

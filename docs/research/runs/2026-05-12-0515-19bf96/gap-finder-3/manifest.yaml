@@ -1,0 +1,11 @@
+role: gap-finder
+worker_id: gap-finder-3
+focus: feasibility filter — applies the spec's four hard constraints (leaf-worker / file-handoff / off-the-shelf-APIs / ≤$200-per-replication / testable-without-venue) to the 8 gap-finder-1 capability gaps and 12 gap-finder-2 architectural-pattern gaps; produces a ranked shortlist by expected-impact ÷ implementation-cost
+slice: both prior gap-finder outputs (GF-1: 8 ranked capability gaps + 5 contradictions + 4 discarded; GF-2: 12 architectural-pattern gaps + 5 KILL-rationales + 6 unresolved-lit notes)
+shortlist_count: 6
+killed_count: 10
+total_evaluated: 20
+status: complete
+verification_queries_run: 0 (pure feasibility-filter on prior gap-finder evidence; verification done via paper_details spot-checks rather than fresh hf_papers search queries — appropriate per gap-finder-3's role of filtering rather than discovering new gaps)
+citations_spot_checked: 8
+citations_resolved: 8

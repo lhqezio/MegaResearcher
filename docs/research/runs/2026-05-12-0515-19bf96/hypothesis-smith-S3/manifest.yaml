@@ -1,0 +1,91 @@
+role: hypothesis-smith
+targeting_gap: docs/research/runs/2026-05-12-0515-19bf96/gap-finder-3/output.md#S3
+revision: 2
+falsifiable: true
+mechanism_grounded: true
+
+# S3-specific metadata
+shortlist_id: S3
+shortlist_name: "Per-binary-membership voting over enumerable structured paper-decisions inside AI-Scientist v2"
+parent_gaps:
+  - "gap-finder-2 GAP-A2"
+  - "gap-finder-1 Rank 4 (ICLR-rubric self-eval)"
+magnitude_anchor: arXiv:2508.17536
+pipeline_baseline: arXiv:2504.08066
+ablation_axis_substrate: arXiv:2507.13300  # AbGen, NEW in rev 2
+representational_collapse_anchor: arXiv:2604.03809  # Patel, NEW in rev 2
+collapse_supporting_evidence: arXiv:2603.27844  # AIMO 3, NEW in rev 2
+
+# Revision-2 changes summary
+revision_summary:
+  - "CR1 addressed: same-model effective-N discount re-derived from Patel arXiv:2604.03809 (effective rank 2.17/3.0 = 27.7% at N=3 on GSM8K, worsens to 2.09/3.0 = 30.3% on MATH-500). Predicted F1 floor descoped from +8 to +6 percentage points using a 30% discount on Choi's doubled-anchor (4.86 * 2.0 * 0.70 = 6.79 -> floor +6). AIMO 3 arXiv:2603.27844 cited as supporting evidence."
+  - "CR2 addressed: baseline-list candidate-universe construction switched to PATH B (canonical-leaderboard tasks). Paper sample restricted to 12 papers from 5 canonical-leaderboard benchmarks (GLUE / SuperGLUE / ImageNet-1k / COCO / WMT-EnDe). Per-task K_baseline=30 universe = published leaderboard top-30 entries at frozen Jan 1 2026. Fully deterministic, zero LM-derivation."
+  - "CR3 addressed: ablation-axis substrate switched to AbGen arXiv:2507.13300 (1500 expert-annotated examples from 807 NLP papers, Cohen's Kappa 0.71-0.78 ACL-area-chair agreement). Uses 100 references sampled at frozen seed=42 from AbGen testmini-500. Per-axis labels extracted deterministically via pre-registered keyword lexicons."
+  - "I1-rev addressed: 12-axis taxonomy collapsed to 6 non-overlapping axes (architecture-component, training-data, training-objective, hyperparameter, evaluation-protocol, inference-procedure). Lexicons pre-registered. Multi-axis bucket flag for ambiguous references."
+  - "I2-rev addressed: F3 modal-bias check recast as a CONTRAST (|unanimous-rate on positive items minus unanimous-rate on negative items| < 30 percentage points) rather than absolute >70%. Distinguishes 'voting converges on correct items' from 'voting unanimously wrong due to shared bias.'"
+  - "I3-rev addressed: 'ICLR rubric enumerates' framing replaced with 'pre-registered taxonomies aligned with ICLR-rubric concerns' throughout section 1."
+  - "I4-rev addressed: dual threshold pre-registered. Statistical floor (p < 0.001 McNemar) AND practical floor (Delta >= +6). Hypothesis passes only if both met. R6 added to risks."
+
+red_team_attacks_pre_empted:
+  - "Same-model effective-N discount too small (revision 2: Patel-derived 30% discount, F1 floor rebased to +6)"
+  - "Baseline-list candidate universe not deterministic (revision 2: switched to canonical-leaderboard top-30 entries, fully deterministic)"
+  - "AbGen omission (revision 2: AbGen is now the ablation-axis substrate, with 1500 expert-annotated references)"
+  - "12-axis taxonomy double-counts (revision 2: collapsed to 6 non-overlapping axes with pre-registered lexicons)"
+  - "F3 modal-bias threshold unsupported (revision 2: recast as contrast)"
+  - "ICLR-rubric-enumerates framing (revision 2: rephrased throughout)"
+  - "Statistical vs practical significance gap (revision 2: dual threshold + R6 risk)"
+
+# Headline predicted-magnitude field (updated for rev 2)
+predicted_magnitude:
+  aggregate_floor_pp: 6  # was 8 in rev 1, 10 in rev 0
+  baseline_list_floor_pp: 5  # was 6 in rev 1
+  ablation_axis_floor_pp: 4  # NEW: AbGen substrate, was implicit in rev 1
+  citation_attribution_floor_pp: 3  # was 4 in rev 1
+  total_binary_decisions: 1080  # was 1040 in rev 1 (12 papers x 30 baselines + 100 AbGen refs x 6 axes + 12 papers x 10 excerpts)
+  statistical_significance_threshold: "p < 0.001 McNemar paired test, paper-clustered SE"
+  practical_significance_threshold: "Delta_aggregate >= +6 percentage points"
+  discount_derivation: "Choi 7-benchmark avg lift +4.86 * 2.0 scoping multiplier * 0.70 representational-collapse discount (Patel 2604.03809: 27.7% on GSM8K, 30.3% on MATH-500) = +6.79 -> floor +6"
+
+falsification_criteria_count: 4
+citations_resolved: 18  # was 15 in rev 1; +3 new (Patel, AIMO 3, AbGen)
+
+# Removed dependency (from rev 1)
+dependencies_removed:
+  - "S2 (Meta-Rewarding length-control wrapper) - dropped in rev 1 because claim/no-claim was descoped"
+
+non_judge_signals:
+  - "baseline-list inclusion: deterministic string-match against (a) frozen leaderboard top-30 entry names AND (b) held-out paper's main experiments table - zero LM step"
+  - "ablation-axis inclusion: deterministic 6-axis lexicon-matching against AbGen expert-annotated reference ablation studies (Cohen's Kappa 0.71-0.78 substrate)"
+  - "citation-attribution per excerpt: deterministic title-match against bibliography (CiteME shape)"
+  - "agreement rate across N samples: mean pairwise Hamming distance (statistic, not judge score)"
+  - "modal-bias contrast: difference in unanimous-vote-rate between positive and negative-label items (statistic)"
+
+new_citations_added_in_revision_2:
+  - "arXiv:2604.03809 (Patel, Representational Collapse - empirical anchor for the 30% discount)"
+  - "arXiv:2603.27844 (AIMO 3, supporting evidence for correlated errors limiting effective N)"
+  - "arXiv:2507.13300 (AbGen, ablation-axis substrate replacement)"
+
+citations_retained_from_revision_1:
+  - "arXiv:2508.17536 (Choi - magnitude anchor)"
+  - "arXiv:2311.17311 (USC)"
+  - "arXiv:2407.02056 (FSC)"
+  - "arXiv:2307.06857 (SC-Open)"
+  - "arXiv:2502.18581 (Self-Certainty)"
+  - "arXiv:2601.02535 (ModeX)"
+  - "arXiv:2501.14917 (Hegelian MAMV)"
+  - "arXiv:2504.08066 (AI Scientist v2)"
+  - "arXiv:2407.12861 (CiteME)"
+  - "arXiv:2507.08038 (AblationBench - related work only)"
+  - "arXiv:2310.01798 (Huang - self-correction floor)"
+  - "arXiv:2506.11930 (Feedback Friction)"
+  - "arXiv:2502.08788 (Stop Overvaluing MAD)"
+  - "arXiv:2305.14325 (Du - multi-agent debate)"
+
+honest_descope_note: |
+  Revision 2 lowers the predicted lift from +8 to +6 percentage points. This is a genuine
+  descope driven by empirical evidence on same-model representational collapse (Patel 2604.03809,
+  AIMO 3 2603.27844). The smith's role is to produce the strongest defensible version of the
+  hypothesis, not to preserve the original magnitude. +6 over 1080 pre-registered binary decisions
+  with AbGen-grade expert annotations and canonical-leaderboard ground truth remains a publishable
+  result if it materializes. If the synthesist judges +6 too low for the contribution to land, the
+  audit trail surfaces this for the user.

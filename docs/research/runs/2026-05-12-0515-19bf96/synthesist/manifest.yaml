@@ -1,0 +1,71 @@
+role: synthesist
+worker_id: synthesist
+run_id: 2026-05-12-0515-19bf96
+spec: docs/research/specs/2026-05-12-megaresearcher-paper-pipeline-spec.md
+plan: docs/research/plans/2026-05-12-megaresearcher-paper-pipeline-plan.md
+novelty_target: hypothesis
+status: completed
+hypotheses_surviving: 3
+hypotheses_rejected: 0
+hypotheses_killed: 3
+escalations: 0
+total_workers_dispatched: 21
+output_word_count: 7652
+output_page_estimate: 11
+output_path: docs/research/runs/2026-05-12-0515-19bf96/synthesist/output.md
+output_path_run_root: docs/research/runs/2026-05-12-0515-19bf96/output.md
+surviving_hypotheses:
+  - id: S1
+    name: Cross-family writer/reviewer routing
+    magnitude_framing: workshop-grade pilot (Part A, $195); main-track Part B ($400-700) future-work flag
+    red_team_verdict: APPROVE rev-2
+    eval_designer_budget_usd: 192.60
+    sample_size: 264
+  - id: S2
+    name: Bias Fitting length-debiasing wrapper on LLM-as-judge calls
+    magnitude_framing: forecast / transfer test; co-defense not primary defense
+    red_team_verdict: APPROVE rev-1
+    eval_designer_budget_usd: 200
+    sample_size: 150
+  - id: S3
+    name: Majority-vote-over-5 on 3 structured paper-decision classes
+    magnitude_framing: borderline main-track; +6 pp practical floor at p<0.001 on 1080 binary decisions
+    red_team_verdict: APPROVE rev-2
+    eval_designer_budget_usd: 140
+    sample_size: 1080
+killed_hypotheses:
+  - id: S4
+    name: Rejected-hypothesis ledger keyed to structured binary signals
+    killed_at_revision: 2
+    kill_route: smith self-recommended KILL after independent deep-read
+    lessons_contributed: 5 (S4-L1 through S4-L5)
+  - id: S5
+    name: Citation pre-flight verification gate
+    killed_at_revision: 2
+    kill_route: red-team KILL — workshop-magnitude self-characterization against main-track spec bar
+    lessons_contributed: three-axis ARIS delta + PaperWrite-Bench D measurement starting point
+  - id: S6
+    name: Ablation-coverage checklist worker
+    killed_at_revision: 1
+    kill_route: red-team KILL — file-handoff-vs-in-context distinction has no published prior
+    lessons_contributed: substrate exists (AblationBench/AbGen) but architectural distinction does not survive diagnostic arm without published prior
+phase_summary:
+  phase_1_literature_scout: 6 scouts, 141 verified citations, 5 known-untrustworthy proxies named
+  phase_2_gap_finder: 3 finders, 6-entry feasibility-filtered shortlist with attack order
+  phase_3_hypothesis_smith: 6 hypotheses across multiple revisions (S4×3, S3×2, S5×2, S1×2, S6×1, S2×1)
+  phase_4_red_team: 6 critique passes, 3 APPROVE (S1 rev-2, S2 rev-1, S3 rev-2), 3 KILL (S4 rev-2, S5 rev-2, S6 rev-1)
+  phase_5_eval_designer: 3 protocols on surviving hypotheses with pre-registered decision rules
+  phase_6_synthesist: 1 worker, this document
+citation_count: 89
+citation_resolution_rate: 1.0
+banned_phrase_violations: 0
+spec_yagni_fence_reflected: true
+audit_trail_complete: true
+all_killed_hypotheses_documented: true
+sources_deduplicated: true
+verification_against_spec_success_criteria:
+  three_plus_surviving_hypotheses: true
+  full_audit_trail_killed_hypotheses: true
+  document_under_12_pages: true
+  yagni_fence_reflected: true
+  every_claim_cited: true

@@ -1,0 +1,33 @@
+role: red-team
+critiquing: /Users/ggix/MegaResearcher/docs/research/runs/2026-05-12-0515-19bf96/hypothesis-smith-S6/output.md
+revision_round: 1
+verdict: KILL
+critical_count: 3
+important_count: 4
+suggestion_count: 2
+gap_claim_survives: true
+gap_claim_survives_caveat: >
+  Narrow gap survives ("no AI-Scientist-family pipeline integrates an external
+  ablation-coverage rubric as a worker with cross-wave file handoff"). But the
+  broader claim that file-handoff differs materially from in-context concatenation
+  is unsupported by any published prior. The mechanism collapses into a
+  system-integration measurement of architectural equivalence.
+critical_objections:
+  - "Mechanism reframe is window-dressing: file-handoff vs in-context distinction has no published prior; smith's own diagnostic arm exists because he cannot anchor the distinction"
+  - "+3 F1pp threshold unanchored: §4 derivation chains three speculative multiplicands (baseline recall, flag precision, incorporation rate) with no published anchor"
+  - "Feedback Friction scope mismatch: §3.1 explicitly disclaims subjective/LLM-judged tasks; ablation generation is exactly the class the paper's authors excluded"
+important_objections:
+  - "F1@5 vs recall@5 conflation repeats in §1: '38% on AuthorAblation' is recall@5 (Claude 3.5 Sonnet) per Table 4, not F1@5 (max=0.31)"
+  - "F2 and F1 are entangled through shared GT-hit denominator; 'both must pass' overstates independence"
+  - "F5 (AbGen non-transfer) demoted to supplementary; hedges away the substrate-portability falsifier AbGen's existence enables"
+  - "PaperRecon (arXiv:2604.01128) not cited; parallel paper-quality benchmark missed in gap re-verification"
+kill_rationale: >
+  Smith's own §0 honest-disclosure asks the synthesist to position S6 as
+  "necessary scaffolding rather than primary contribution." The prompt
+  explicitly authorizes using this as a kill trigger. Approving would commit
+  Phase-5 budget to an eval-designer document the smith himself describes as
+  scaffolding-grade, on a +3 F1pp threshold within AblationBench LMJudge's
+  ~26%-disagreement noise floor, where the mechanism rests on an architectural
+  distinction (file-handoff vs in-context) the smith cannot anchor to any prior.
+  Clean KILL preserves the documented lesson (gap is real, mechanism is empty,
+  future-work direction named) without burning Phase-5 budget.

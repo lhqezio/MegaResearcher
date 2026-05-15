@@ -1,0 +1,89 @@
+role: eval-designer
+worker_id: eval-designer-S1
+run_id: 2026-05-12-0515-19bf96
+target_hypothesis: ../hypothesis-smith-S1/output.md
+red_team_verdict: APPROVE (rev-2, cap-3 final) — see ../red-team-S1/output.md
+
+datasets_count: 1
+datasets:
+  - id: ut-amrl/SPECS-Review-Benchmark
+    paper: arXiv:2604.13940
+    role: primary
+    subset: 22-perturbation human-consensus-valid (A.9.4 Table 5)
+    splits: single train split — full evaluation set
+    sample_size: 22 perturbations
+    license: community-released; license-text confirmation pending implementation team (see output.md §2.1)
+
+baselines_count: 3
+baselines:
+  - id: B1
+    name: stage-matched same-family writer/reviewer pipeline
+    role: prior-art primary baseline
+    configs: [B1-claude, B1-gpt]
+  - id: B2
+    name: same-family with extra reviewer rounds at matched token budget
+    role: ablation baseline (Zhang role-iteration check)
+    configs: [B2-claude, B2-gpt]
+  - id: B3
+    name: single-pass reviewer (no writer stage)
+    role: sanity/trivial baseline
+    status: DROPPED from Part A to fit $200 ceiling — declared as known limitation; flagged for Part B
+
+falsification_experiments_count: 4
+falsification_criteria:
+  - id: F1
+    test: paired-difference bootstrap on Correctness+Evaluations recall
+    threshold: Δ ≥ 0.05 AND p < 0.13 (workshop-grade) / p < 0.05 (main-track reference) AND OpenAI-judge same-direction
+  - id: F2'
+    test: per-orientation lift recomputation
+    threshold: both orientation-level Δ values < 0 → falsifies
+  - id: F3
+    test: substance-axis vs presentation-axis Δ comparison (within-paper)
+    threshold: Δ_substance − Δ_presentation < 0.03 → falsifies
+  - id: F4
+    test: per-orientation Δ vs across-orientation mean
+    threshold: per-orientation Δ outside ±1 paired-difference SE band (expected ~0.044)
+
+cells:
+  total: 264
+  breakdown: 22 perturbations × 1 pair × 2 orientations × 3 seeds × 2 conditions
+
+seeds: [7, 13, 42]
+overflow_seeds: [101, 103, 107]
+scheduling_seed: 19
+
+expected_cost_usd: 192.60
+cost_breakdown:
+  primary_F1_contrast: 171.60
+  calibration_pilot: 3.00
+  buffer: 18.00
+
+estimated_compute_hours: 2
+estimated_engineer_setup_days: 2-3
+gpu_required: false
+api_keys_required: [anthropic, openai, google]
+
+decision_rules:
+  PASS_main_track: F1 Δ ≥ 0.05 AND p < 0.05 AND OpenAI-judge same direction AND F4 holds
+  PASS_workshop_grade: F1 Δ ≥ 0.05 AND p < 0.13 AND OpenAI-judge same direction AND F4 holds
+  PARTIAL: 0.03 ≤ Δ < 0.05 AND consistent direction across orientations AND OpenAI-judge same direction
+  FAIL: Δ < 0.03 OR inconsistent direction across orientations OR OpenAI-judge opposite direction
+  ABORT: calibration-pilot cost-overrun ≥10%
+
+downgrades:
+  F2_fail: orientation-driven, not pair-driven
+  F3_fail: substance/presentation distinction not supported
+  F4_fail: capability-asymmetry finding
+
+flagged_intractable: false
+budget_compliance: in-scope ($192.60 ≤ $200 spec ceiling)
+framing: workshop-grade pilot with Part B future-work flag
+
+synthesist_forwarding:
+  - present_as: workshop-grade pilot
+  - swarm_level_lesson: main-track-grade cross-family writer/reviewer measurement requires budget above the swarm's ≤$200 gating allows
+  - primary_residual: Risk-5 memorization confound on AAAI-25 papers (resolution path: Part B held-out post-cutoff probe)
+  - secondary_residual: F1 α≈0.13 workshop-grade statistical power (resolution path: larger substrate / more seeds / multiple pairs)
+  - tertiary_residual: B3 sanity baseline omitted from Part A (resolution path: Part B inclusion or $30 follow-up ablation)
+
+status: complete

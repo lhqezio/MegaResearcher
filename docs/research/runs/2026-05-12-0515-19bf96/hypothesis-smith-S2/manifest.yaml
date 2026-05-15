@@ -1,0 +1,67 @@
+role: hypothesis-smith
+worker_id: hypothesis-smith-S2
+targeting_gap: docs/research/runs/2026-05-12-0515-19bf96/gap-finder-3/output.md#S2
+revision: 1
+falsifiable: true
+mechanism_grounded: true
+shortlist_entry: S2
+shortlist_source_gaps:
+  - docs/research/runs/2026-05-12-0515-19bf96/gap-finder-2/output.md#GAP-A10
+  - docs/research/runs/2026-05-12-0515-19bf96/gap-finder-2/output.md#KILL-3
+scope_revision_1:
+  scope: "sub-dominant length-bias exploit channel only — content-fabrication exploits (BadScientist) out of scope and require separate defenses"
+  precondition_for_s3_s4: false  # dropped per red-team C3 / I2; S2 is co-defense, not precondition
+  primary_debiaser: "Bias Fitting (arXiv:2505.12843) — scalar-score, non-linear, non-pairwise; pivoted from Dubois per red-team C2"
+  m3_transfer_status: "forecast (NOT directly documented in AI-Scientist-family); falsified directly by F1 if it doesn't hold"
+non_judge_signal: regression coefficients β_raw, β_norm, β_raw − β_norm on log(token-count); deterministic statistical signal — not an LLM-judge re-evaluation
+falsification_criteria_count: 4
+risks_documented: 6  # R5 revised + R6 (BadScientist-dominance) added in revision 1
+sources_verified_count: 13
+sources_verified:
+  - 2407.19594  # Meta-Rewarding (cited, but no longer the debiaser this hypothesis uses)
+  - 2404.04475  # Dubois (cited, but per C2 not the debiaser — pairwise, not scalar)
+  - 2401.10020  # Self-Rewarding (M2 verbosity-blowup documentation)
+  - 2503.18102  # AgentRxiv (C1 caveat — score-fabrication, NOT verbosity)
+  - 2501.04227  # Agent Laboratory (C1 caveat — same)
+  - 2506.11930  # Feedback Friction (M6 / R1)
+  - 2310.01798  # Self-correct (flagged not directly binding)
+  - 2402.07319  # ODIN (M1)
+  - 2410.21819  # Self-Preference Bias (M1)
+  - 2505.12843  # Bias Fitting — NEW IN REVISION 1; the actual debiaser this hypothesis tests
+  - 2510.18003  # BadScientist — NEW IN REVISION 1; sub-dominance grounding per C3
+  - 2505.17100  # RBD — NEW IN REVISION 1; cited as downstream-defense pointer (not relied on for mechanism)
+  - 2507.02694  # LimitGen — NEW IN REVISION 1; optional sanity-check substrate
+revision_1_critical_objections_addressed:
+  C1_agentrxiv_misrepresentation:
+    status: addressed
+    method: "M3 rewritten — transfer claim explicitly flagged as forecast, AgentRxiv §4.1 cited only as background failure-mode documentation (acknowledged as different exploit mechanism: score-fabrication, not verbosity)"
+  C2_dubois_implementation_gap:
+    status: addressed
+    method: "Pivoted from Dubois (pairwise) to Bias Fitting arXiv:2505.12843 (scalar, non-linear, non-pairwise) — directly maps to MegaResearcher's scalar-score red-team judge. Calibration cost re-estimated at ~$45 (was elided as $0 in revision 0)."
+  C3_badscientist_length_subdominant:
+    status: addressed
+    method: "Dropped 'precondition for S3/S4' framing entirely. Cited BadScientist arXiv:2510.18003. Reframed S2 as 'cheapest hardening intervention targeting one sub-dominant exploit channel; BadScientist-style content-fabrication out of scope.' Added R6 risk explicitly for BadScientist-dominance."
+revision_1_important_objections_addressed:
+  I1_f3_proxy_list_too_narrow:
+    status: addressed
+    method: "F3 proxy list augmented from 5 to 8 — added improvement-magnitude-plausibility, claim-vs-result-table-match, presence-of-baseline-CI as BadScientist-strategy-inspired signals. Caveat documented that these are signals, not full coverage of BadScientist's exploit space."
+  I2_precondition_overstated:
+    status: addressed
+    method: "Dropped entirely per C3."
+  I3_magnitude_handwaved:
+    status: addressed
+    method: "Primary prediction restated as sign + statistical significance. Order-of-magnitude expectation explicitly flagged as secondary, not a primary prediction."
+  I4_r5_graceful_noop:
+    status: addressed
+    method: "R5 rewritten — baseline-null result is a survey artifact, not a falsification. F1 framed as 'configuration-dependent no-op' rather than positive contribution-killer."
+revision_1_suggestions_addressed:
+  S1_heterogeneous_judge_baseline:
+    status: addressed
+    method: "B3 upgraded from optional to required-if-S1-runs in §6."
+  S2_limitgen_sanity_check:
+    status: addressed
+    method: "LimitGen arXiv:2507.02694 added as optional pre-substrate sanity check in §6 (eval-designer's call on whether to commit budget)."
+artifacts:
+  - output.md
+  - manifest.yaml
+  - verification.md
