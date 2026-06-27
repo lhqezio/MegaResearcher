@@ -1,0 +1,21 @@
+MegaResearcher v1
+Copyright (C) 2026 MegaResearcher contributors
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option)
+any later version. See LICENSE for the full text.
+
+DERIVATION
+This Rust harness is derived from claurst (https://github.com/Kuberwastaken/claurst),
+which is licensed under GPL-3.0. claurst's source was used as the base and
+trimmed (buddy, acp, bridge, voice, /share removed). The full claurst git
+history is preserved upstream.
+
+PROMPT-ASSET LICENSE EXCEPTION
+The prompt assets under assets/prompts/** (the former Apache-2.0 worker
+agent definitions and skill bodies, inlined with research discipline) remain
+licensed under Apache-2.0. Apache-2.0 code may be incorporated into a
+GPL-3.0 derivative; this exception documents that provenance so those prompt
+files stay traceable to their Apache-2.0 origin. The assets/ directory is
+populated in a later build phase.
