@@ -639,6 +639,9 @@ async fn run_synthesist_inlines_all_outputs_and_writes_artifacts() {
         "PLAN",
         &[s1],
         &[g1],
+        &[],
+        &[],
+        &[],
         &fixture_agents_dir(),
         provider,
         "fake-model",
@@ -1436,4 +1439,95 @@ async fn eval_designers_halt_on_gate_escalation() {
         }
         other => panic!("expected Escalated, got {other:?}"),
     }
+}
+
+fn fixture_hypothesis_spec_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/specs/hypothesis-spec.md")
+}
+fn fixture_hypothesis_plan_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/plans/hypothesis-plan.md")
+}
+
+// Scripted turns for a gap-finder that writes a manifest with a structured
+// gaps: list of `count` gaps.
+fn gapfinder_turns_with_gaps(count: usize) -> Vec<Vec<StreamEvent>> {
+    let mut gaps_yaml = String::from("gaps:\n");
+    for i in 1..=count {
+        gaps_yaml.push_str(&format!(
+            "  - id: gap-{i}\n    statement: Gap {i} statement.\n    type: contradiction\n"
+        ));
+    }
+    let manifest = format!("role: gap-finder\ngaps_count: {count}\n{gaps_yaml}");
+    vec![
+        write_turn("output.md", "# Gaps\n\nSome gaps identified."),
+        write_turn("manifest.yaml", &manifest),
+        write_turn("verification.md", "# Verification\n\nok"),
+        final_turn("Done."),
+    ]
+}
+
+#[tokio::test]
+async fn execute_runs_full_hypothesis_path_minimal() {
+    let tmp = tempdir().unwrap();
+    let research_base = tmp.path().join("research");
+    fs::create_dir_all(&research_base).unwrap();
+    let spec_path = research_base.join("specs/hypothesis-spec.md");
+    fs::create_dir_all(spec_path.parent().unwrap()).unwrap();
+    fs::copy(fixture_hypothesis_spec_path(), &spec_path).unwrap();
+
+    // 1 scout (4) + 1 gap-finder with 1 gap (4) + 1 smith (4) + 1 red-team APPROVE (4)
+    // + 1 eval-designer not-intractable (4) + 1 synthesist (4) = 24 turns.
+    let turns: Vec<Vec<StreamEvent>> = {
+        let mut t = run_turns(1); // scout-1
+        t.extend(gapfinder_turns_with_gaps(1)); // gap-finder-1 (writes 1 gap)
+        t.extend(run_turns(1)); // hypothesis-smith-1
+        t.extend(redteam_turns("APPROVE")); // red-team-1-r1
+        t.extend(evaldesign_turns(false)); // eval-designer-1
+        t.extend(run_turns(1)); // synthesist
+        t
+    };
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let orch = Orchestrator::new(
+        OrchestratorConfig {
+            research_base: research_base.clone(),
+            agents_dir: fixture_agents_dir(),
+            default_model: "fake-model".into(),
+            max_parallel: 1,
+        },
+        provider,
+    );
+    let out = orch
+        .execute(
+            &spec_path,
+            &fixture_hypothesis_plan_path(),
+            "2026-06-27-0400-d1e2f3",
+        )
+        .await
+        .unwrap();
+    let run_dir = out.run_dir.clone();
+    let by_name: std::collections::HashMap<String, String> =
+        out.phase_statuses.into_iter().collect();
+    assert_eq!(by_name["literature-scout"], "complete");
+    assert_eq!(by_name["gap-finder"], "complete");
+    assert_eq!(by_name["hypothesis-smith"], "complete");
+    assert_eq!(by_name["red-team"], "complete");
+    assert_eq!(by_name["eval-designer"], "complete");
+    assert_eq!(by_name["synthesist"], "complete");
+    assert!(out.escalations.is_empty());
+    // Run-root output.md + symlink resolve.
+    assert!(run_dir.join("output.md").exists());
+    let link = research_base.join("specs/hypothesis-spec-latest.md");
+    assert!(link.exists());
+    assert_eq!(
+        fs::read_to_string(&link).unwrap(),
+        fs::read_to_string(run_dir.join("output.md")).unwrap()
+    );
+    // The smith + red-team + eval-designer dirs exist.
+    assert!(run_dir
+        .join("hypothesis-smith-1")
+        .join("output.md")
+        .exists());
+    assert!(run_dir.join("red-team-1-r1").join("output.md").exists());
+    assert!(run_dir.join("eval-designer-1").join("output.md").exists());
 }

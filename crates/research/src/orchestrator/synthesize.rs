@@ -23,6 +23,9 @@ pub async fn run_synthesist(
     plan_text: &str,
     scout_dirs: &[PathBuf],
     gap_dirs: &[PathBuf],
+    smith_dirs: &[PathBuf],
+    redteam_dirs: &[PathBuf],
+    eval_dirs: &[PathBuf],
     agents_dir: &Path,
     provider: Arc<dyn LlmProvider>,
     default_model: &str,
@@ -31,22 +34,29 @@ pub async fn run_synthesist(
     let mut prior: Vec<(String, String)> = Vec::new();
     prior.push(("Plan".to_string(), plan_text.to_string()));
     for d in scout_dirs {
-        let name = d
-            .file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
-        let body = fs::read_to_string(d.join("output.md"))
-            .unwrap_or_else(|_| "(no output.md)".to_string());
+        let name = dir_name(d);
+        let body = read_output(d);
         prior.push((format!("Scout {name}"), body));
     }
     for d in gap_dirs {
-        let name = d
-            .file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
-        let body = fs::read_to_string(d.join("output.md"))
-            .unwrap_or_else(|_| "(no output.md)".to_string());
+        let name = dir_name(d);
+        let body = read_output(d);
         prior.push((format!("Gap-finder {name}"), body));
+    }
+    for d in smith_dirs {
+        let name = dir_name(d);
+        let body = read_output(d);
+        prior.push((format!("Hypothesis-smith {name}"), body));
+    }
+    for d in redteam_dirs {
+        let name = dir_name(d);
+        let body = read_output(d);
+        prior.push((format!("Red-team {name}"), body));
+    }
+    for d in eval_dirs {
+        let name = dir_name(d);
+        let body = read_output(d);
+        prior.push((format!("Eval-designer {name}"), body));
     }
     // `prior` owns the (label, content) strings; `prior_refs` borrows them for
     // the single `build_prompt` call. No leak — `prior` lives for this scope.
@@ -107,4 +117,14 @@ pub fn finalize_run(run_dir: &Path, spec_path: &Path, research_base: &Path) -> i
 
 fn symlink_exists(p: &Path) -> bool {
     p.symlink_metadata().is_ok()
+}
+
+fn dir_name(d: &Path) -> String {
+    d.file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default()
+}
+
+fn read_output(d: &Path) -> String {
+    fs::read_to_string(d.join("output.md")).unwrap_or_else(|_| "(no output.md)".to_string())
 }

@@ -23,10 +23,14 @@ use claurst_api::LlmProvider;
 use crate::orchestrator::consolidate::{consolidate_bibliography, consolidate_gaps};
 use crate::orchestrator::dispatch::{build_prompt, dispatch_wave, WorkerSpec};
 use crate::orchestrator::dispatch_plan::parse_plan;
+use crate::orchestrator::evaldesign::run_eval_designers;
+use crate::orchestrator::gaps::collect_gaps;
 use crate::orchestrator::gate::{verify_wave, GateStatus};
+use crate::orchestrator::hypothesis::dispatch_hypothesis_smiths;
 use crate::orchestrator::preflight::{
     add_escalation, build_initial_swarm_state, preflight_check, set_phase, write_swarm,
 };
+use crate::orchestrator::redteam::run_redteam_loop;
 use crate::orchestrator::synthesize::{finalize_run, run_synthesist};
 use crate::state::run_tree::create_run_tree;
 use crate::worker::WorkerError;
@@ -238,6 +242,81 @@ impl Orchestrator {
         consolidate_gaps(&run_dir, &gap_dirs)?;
         write_swarm(&swarm, &run_dir)?;
 
+        // Phases 3/4/5 — hypothesis-target path (skipped for gap-finding runs).
+        let (smith_dirs, redteam_dirs, eval_dirs): (Vec<PathBuf>, Vec<PathBuf>, Vec<PathBuf>) =
+            if !target.skips_critique_phases() {
+                // Phase 3 — hypothesis-smith (one per gap).
+                let gaps = collect_gaps(&run_dir, &gap_dirs)?;
+                set_phase(&mut swarm, "hypothesis-smith", "running", vec![]);
+                write_swarm(&swarm, &run_dir)?;
+                let hypotheses = dispatch_hypothesis_smiths(
+                    &run_dir,
+                    &spec_text,
+                    &gaps,
+                    &self.config.agents_dir,
+                    self.provider.clone(),
+                    &self.config.default_model,
+                    self.config.max_parallel,
+                )
+                .await?;
+                let smith_dirs: Vec<PathBuf> = hypotheses.iter().map(|h| h.dir.clone()).collect();
+                let smith_workers: Vec<(String, String)> = hypotheses
+                    .iter()
+                    .map(|h| (h.name.clone(), "passed".to_string()))
+                    .collect();
+                set_phase(&mut swarm, "hypothesis-smith", "complete", smith_workers);
+                write_swarm(&swarm, &run_dir)?;
+
+                // Phase 4 — red-team critique loop.
+                set_phase(&mut swarm, "red-team", "running", vec![]);
+                write_swarm(&swarm, &run_dir)?;
+                let rt = run_redteam_loop(
+                    &run_dir,
+                    &spec_text,
+                    hypotheses,
+                    &self.config.agents_dir,
+                    self.provider.clone(),
+                    &self.config.default_model,
+                    self.config.max_parallel,
+                    &mut swarm,
+                )
+                .await?;
+                let redteam_dirs = rt.redteam_dirs;
+                let rt_workers: Vec<(String, String)> = rt
+                    .survivors
+                    .iter()
+                    .map(|h| (h.name.clone(), "approved".to_string()))
+                    .chain(rt.killed.iter().map(|n| (n.clone(), "killed".to_string())))
+                    .collect();
+                set_phase(&mut swarm, "red-team", "complete", rt_workers);
+                write_swarm(&swarm, &run_dir)?;
+                if rt.survivors.is_empty() {
+                    let killed = rt.killed.clone();
+                    return Err(OrchestratorError::Escalated(killed));
+                }
+
+                // Phase 5 — eval-designer (one per survivor).
+                set_phase(&mut swarm, "eval-designer", "running", vec![]);
+                write_swarm(&swarm, &run_dir)?;
+                let ed = run_eval_designers(
+                    &run_dir,
+                    &spec_text,
+                    &rt.survivors,
+                    &self.config.agents_dir,
+                    self.provider.clone(),
+                    &self.config.default_model,
+                    self.config.max_parallel,
+                    &mut swarm,
+                )
+                .await?;
+                let eval_dirs = ed.eval_dirs;
+                set_phase(&mut swarm, "eval-designer", "complete", ed.phase_workers);
+                write_swarm(&swarm, &run_dir)?;
+                (smith_dirs, redteam_dirs, eval_dirs)
+            } else {
+                (vec![], vec![], vec![])
+            };
+
         // Phase 6 — synthesist (gap-finding skips 3/4/5, already marked skipped).
         set_phase(&mut swarm, "synthesist", "running", vec![]);
         write_swarm(&swarm, &run_dir)?;
@@ -247,6 +326,9 @@ impl Orchestrator {
             &plan_text,
             &scout_dirs,
             &gap_dirs,
+            &smith_dirs,
+            &redteam_dirs,
+            &eval_dirs,
             &self.config.agents_dir,
             self.provider.clone(),
             &self.config.default_model,
