@@ -3,4 +3,5 @@
 
 pub mod protocol_parser;
 pub mod regression;
+pub mod scaffold;
 pub mod verdict;
