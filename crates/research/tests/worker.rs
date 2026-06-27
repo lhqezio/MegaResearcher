@@ -28,7 +28,7 @@ fn write_turn(file: &str, content: &str) -> Vec<StreamEvent> {
         },
         StreamEvent::TextDelta {
             index: 0,
-            text: format!("writing {file}").into(),
+            text: format!("writing {file}"),
         },
         StreamEvent::ContentBlockStop { index: 0 },
         StreamEvent::ContentBlockStart {
