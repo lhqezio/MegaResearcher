@@ -137,11 +137,15 @@ use claurst_api::{LlmProvider, StopReason, StreamEvent};
 use claurst_core::types::{ContentBlock, UsageInfo};
 use serde_json::json;
 
+use async_trait::async_trait;
+use claurst_mcp::{CallToolResult, McpContent};
 use common::fake_provider::FakeProvider;
+use megaresearcher_research::mcp::{McpCaller, McpError, McpToolSet};
 use megaresearcher_research::orchestrator::dispatch::{
     build_prompt, dispatch_wave, run_worker, WorkerSpec,
 };
 use megaresearcher_research::worker::WorkerStop;
+use std::sync::Mutex;
 
 fn write_turn(file: &str, content: &str) -> Vec<StreamEvent> {
     vec![
@@ -1707,5 +1711,150 @@ async fn full_hypothesis_integration_test_kill_halts_run() {
             assert_eq!(names, vec!["hypothesis-smith-1".to_string()]);
         }
         other => panic!("expected Escalated, got {other:?}"),
+    }
+}
+
+/// An MCP tool-use turn: same stream shape as `write_turn` but the ToolUse
+/// block carries the MCP tool's `mcp__<server>__<tool>` name + the tool input,
+/// and `stop_reason` is `ToolUse` so the worker dispatches and loops.
+fn mcp_turn(name: &str, input: serde_json::Value) -> Vec<StreamEvent> {
+    vec![
+        StreamEvent::MessageStart {
+            id: "m".into(),
+            model: "fake".into(),
+            usage: UsageInfo::default(),
+        },
+        StreamEvent::ContentBlockStart {
+            index: 0,
+            content_block: ContentBlock::Text {
+                text: String::new(),
+            },
+        },
+        StreamEvent::TextDelta {
+            index: 0,
+            text: format!("calling {name}"),
+        },
+        StreamEvent::ContentBlockStop { index: 0 },
+        StreamEvent::ContentBlockStart {
+            index: 1,
+            content_block: ContentBlock::ToolUse {
+                id: "tu_mcp".into(),
+                name: name.into(),
+                input,
+            },
+        },
+        StreamEvent::ContentBlockStop { index: 1 },
+        StreamEvent::MessageDelta {
+            stop_reason: Some(StopReason::ToolUse),
+            usage: Some(UsageInfo::default()),
+        },
+        StreamEvent::MessageStop,
+    ]
+}
+
+/// A `McpCaller` that records every call and returns a canned result.
+struct FakeMcpCaller {
+    calls: Mutex<Vec<(String, Option<serde_json::Value>)>>,
+    result: CallToolResult,
+}
+
+#[async_trait]
+impl McpCaller for FakeMcpCaller {
+    async fn call_tool(
+        &self,
+        name: &str,
+        arguments: Option<serde_json::Value>,
+    ) -> Result<CallToolResult, McpError> {
+        self.calls
+            .lock()
+            .unwrap()
+            .push((name.to_string(), arguments));
+        Ok(self.result.clone())
+    }
+}
+
+/// Prove end-to-end that `run_worker` threads `extra_tools` into the `Worker`,
+/// the worker dispatches an `mcp__ml-intern__hf_papers` tool-use to the `McpTool`,
+/// the `McpTool` calls through `McpCaller` (`FakeMcpCaller` records it), converts
+/// the result, and the worker continues to write its artifacts — with no
+/// subprocess and no network.
+#[tokio::test]
+async fn run_worker_threads_mcp_tool_and_dispatches_call() {
+    let tmp = tempdir().unwrap();
+    // Use the fixture agents dir (Phase 3) so the literature-scout agent asset
+    // carries the frontmatter `load_asset` requires and `model: inherit`.
+    let agents = fixture_agents_dir();
+    let out_dir = tmp.path().join("literature-scout-1");
+    fs::create_dir_all(&out_dir).unwrap();
+
+    // The fake MCP caller records the bare-name call and returns one result.
+    // Keep a concrete handle (`fake`) for later inspection; `caller` is the
+    // trait-object upcast passed into the tool set.
+    let fake = Arc::new(FakeMcpCaller {
+        calls: Mutex::new(vec![]),
+        result: CallToolResult {
+            content: vec![McpContent::Text {
+                text: "# trending papers\n...".into(),
+            }],
+            is_error: false,
+        },
+    });
+    let caller = fake.clone() as Arc<dyn McpCaller>;
+    let set = McpToolSet::from_caller(
+        "ml-intern",
+        caller,
+        vec![claurst_mcp::McpTool {
+            name: "hf_papers".into(),
+            description: Some("papers".into()),
+            input_schema: json!({"type": "object"}),
+        }],
+    );
+    assert_eq!(set.tools()[0].name(), "mcp__ml-intern__hf_papers");
+
+    // Provider scripts: call the MCP tool, then write the three artifacts, end.
+    let provider = FakeProvider::new(
+        "fake",
+        vec![
+            mcp_turn(
+                "mcp__ml-intern__hf_papers",
+                json!({"operation": "trending", "limit": 1}),
+            ),
+            write_turn("output.md", "# output\n"),
+            write_turn("manifest.yaml", "kind: scout\n"),
+            write_turn("verification.md", "ok\n"),
+            final_turn("done"),
+        ],
+    );
+
+    let spec = WorkerSpec {
+        name: "literature-scout-1".into(),
+        role: "literature-scout".into(),
+        output_dir: out_dir.clone(),
+        shared_dir: tmp.path().to_path_buf(),
+        prompt: build_prompt("spec", &[], None, &out_dir),
+    };
+    let outcome = run_worker(
+        &spec,
+        &agents,
+        Arc::new(provider) as Arc<dyn LlmProvider>,
+        "fake-model",
+        set.tools(),
+    )
+    .await
+    .expect("worker runs");
+    assert_eq!(outcome.stop, WorkerStop::EndTurn);
+
+    // The MCP tool was dispatched with the bare name + the scripted input.
+    let calls = fake.calls.lock().unwrap().clone();
+    assert_eq!(calls.len(), 1, "expected one MCP call, got {calls:?}");
+    assert_eq!(calls[0].0, "hf_papers");
+    assert_eq!(
+        calls[0].1,
+        Some(json!({"operation": "trending", "limit": 1}))
+    );
+
+    // The file-I/O tools still wrote the three artifacts.
+    for f in ["output.md", "manifest.yaml", "verification.md"] {
+        assert!(out_dir.join(f).exists(), "missing artifact {f}");
     }
 }
