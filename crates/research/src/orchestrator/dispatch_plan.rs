@@ -172,6 +172,9 @@ mod tests {
     #[test]
     fn frontmatter_extracted() {
         let m = "---\n novelty_target: gap-finding\n---\nbody";
-        assert_eq!(extract_frontmatter(m).unwrap().trim(), "novelty_target: gap-finding");
+        assert_eq!(
+            extract_frontmatter(m).unwrap().trim(),
+            "novelty_target: gap-finding"
+        );
     }
 }

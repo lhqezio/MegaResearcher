@@ -46,7 +46,11 @@ pub async fn verify_wave(
             .ok_or_else(|| OrchestratorError::Finalize(format!("no spec for worker {name}")))?;
         let missing = check_artifacts(&spec.output_dir, REQUIRED_ARTIFACTS);
         if missing.is_empty() {
-            results.push(GateOutcome { name, status: GateStatus::Passed, retries: 0 });
+            results.push(GateOutcome {
+                name,
+                status: GateStatus::Passed,
+                retries: 0,
+            });
             continue;
         }
         // One retry with the missing list appended.
@@ -58,7 +62,11 @@ pub async fn verify_wave(
         } else {
             GateStatus::Escalated
         };
-        results.push(GateOutcome { name, status, retries: 1 });
+        results.push(GateOutcome {
+            name,
+            status,
+            retries: 1,
+        });
     }
     Ok(results)
 }

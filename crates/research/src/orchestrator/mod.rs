@@ -103,8 +103,13 @@ impl Orchestrator {
             .map_err(OrchestratorError::Preflight)?;
 
         let run_dir = create_run_tree(&self.config.research_base, run_id)?;
-        let mut swarm =
-            build_initial_swarm_state(run_id, spec_path, plan_path, target, self.config.max_parallel);
+        let mut swarm = build_initial_swarm_state(
+            run_id,
+            spec_path,
+            plan_path,
+            target,
+            self.config.max_parallel,
+        );
         write_swarm(&swarm, &run_dir)?;
 
         // Phase 1 — literature-scout.
@@ -146,7 +151,12 @@ impl Orchestrator {
             .iter()
             .map(|g| (g.name.clone(), gate_status_str(g.status)))
             .collect();
-        set_phase(&mut swarm, "literature-scout", "complete", scout_workers.clone());
+        set_phase(
+            &mut swarm,
+            "literature-scout",
+            "complete",
+            scout_workers.clone(),
+        );
         let escalated: Vec<String> = scout_gates
             .iter()
             .filter(|g| g.status == GateStatus::Escalated)
@@ -163,8 +173,7 @@ impl Orchestrator {
         write_swarm(&swarm, &run_dir)?;
 
         // Phase 2 — gap-finder.
-        let bib_text =
-            std::fs::read_to_string(run_dir.join("bibliography.md")).unwrap_or_default();
+        let bib_text = std::fs::read_to_string(run_dir.join("bibliography.md")).unwrap_or_default();
         let gap_specs: Vec<WorkerSpec> = parsed
             .gap_finders
             .iter()
@@ -270,11 +279,7 @@ impl Orchestrator {
                 .iter()
                 .map(|p| (p.name.clone(), p.status.clone()))
                 .collect(),
-            escalations: swarm
-                .escalations
-                .iter()
-                .map(|e| e.worker.clone())
-                .collect(),
+            escalations: swarm.escalations.iter().map(|e| e.worker.clone()).collect(),
         })
     }
 }

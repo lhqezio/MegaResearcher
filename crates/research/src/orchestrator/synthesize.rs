@@ -31,18 +31,29 @@ pub async fn run_synthesist(
     let mut prior: Vec<(String, String)> = Vec::new();
     prior.push(("Plan".to_string(), plan_text.to_string()));
     for d in scout_dirs {
-        let name = d.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-        let body = fs::read_to_string(d.join("output.md")).unwrap_or_else(|_| "(no output.md)".to_string());
+        let name = d
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let body = fs::read_to_string(d.join("output.md"))
+            .unwrap_or_else(|_| "(no output.md)".to_string());
         prior.push((format!("Scout {name}"), body));
     }
     for d in gap_dirs {
-        let name = d.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-        let body = fs::read_to_string(d.join("output.md")).unwrap_or_else(|_| "(no output.md)".to_string());
+        let name = d
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let body = fs::read_to_string(d.join("output.md"))
+            .unwrap_or_else(|_| "(no output.md)".to_string());
         prior.push((format!("Gap-finder {name}"), body));
     }
     // `prior` owns the (label, content) strings; `prior_refs` borrows them for
     // the single `build_prompt` call. No leak — `prior` lives for this scope.
-    let prior_refs: Vec<(&str, &str)> = prior.iter().map(|(l, c)| (l.as_str(), c.as_str())).collect();
+    let prior_refs: Vec<(&str, &str)> = prior
+        .iter()
+        .map(|(l, c)| (l.as_str(), c.as_str()))
+        .collect();
 
     let output_dir = run_dir.join("synthesist");
     fs::create_dir_all(&output_dir)?;

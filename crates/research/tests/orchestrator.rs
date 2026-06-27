@@ -145,27 +145,61 @@ use megaresearcher_research::worker::WorkerStop;
 
 fn write_turn(file: &str, content: &str) -> Vec<StreamEvent> {
     vec![
-        StreamEvent::MessageStart { id: "m".into(), model: "fake".into(), usage: UsageInfo::default() },
-        StreamEvent::ContentBlockStart { index: 0, content_block: ContentBlock::Text { text: String::new() } },
-        StreamEvent::TextDelta { index: 0, text: format!("writing {file}") },
+        StreamEvent::MessageStart {
+            id: "m".into(),
+            model: "fake".into(),
+            usage: UsageInfo::default(),
+        },
+        StreamEvent::ContentBlockStart {
+            index: 0,
+            content_block: ContentBlock::Text {
+                text: String::new(),
+            },
+        },
+        StreamEvent::TextDelta {
+            index: 0,
+            text: format!("writing {file}"),
+        },
         StreamEvent::ContentBlockStop { index: 0 },
-        StreamEvent::ContentBlockStart { index: 1, content_block: ContentBlock::ToolUse {
-            id: format!("tu_{file}"), name: "Write".into(),
-            input: json!({ "file_path": file, "content": content }),
-        } },
+        StreamEvent::ContentBlockStart {
+            index: 1,
+            content_block: ContentBlock::ToolUse {
+                id: format!("tu_{file}"),
+                name: "Write".into(),
+                input: json!({ "file_path": file, "content": content }),
+            },
+        },
         StreamEvent::ContentBlockStop { index: 1 },
-        StreamEvent::MessageDelta { stop_reason: Some(StopReason::ToolUse), usage: Some(UsageInfo::default()) },
+        StreamEvent::MessageDelta {
+            stop_reason: Some(StopReason::ToolUse),
+            usage: Some(UsageInfo::default()),
+        },
         StreamEvent::MessageStop,
     ]
 }
 
 fn final_turn(text: &str) -> Vec<StreamEvent> {
     vec![
-        StreamEvent::MessageStart { id: "m".into(), model: "fake".into(), usage: UsageInfo::default() },
-        StreamEvent::ContentBlockStart { index: 0, content_block: ContentBlock::Text { text: String::new() } },
-        StreamEvent::TextDelta { index: 0, text: text.into() },
+        StreamEvent::MessageStart {
+            id: "m".into(),
+            model: "fake".into(),
+            usage: UsageInfo::default(),
+        },
+        StreamEvent::ContentBlockStart {
+            index: 0,
+            content_block: ContentBlock::Text {
+                text: String::new(),
+            },
+        },
+        StreamEvent::TextDelta {
+            index: 0,
+            text: text.into(),
+        },
         StreamEvent::ContentBlockStop { index: 0 },
-        StreamEvent::MessageDelta { stop_reason: Some(StopReason::EndTurn), usage: Some(UsageInfo::default()) },
+        StreamEvent::MessageDelta {
+            stop_reason: Some(StopReason::EndTurn),
+            usage: Some(UsageInfo::default()),
+        },
         StreamEvent::MessageStop,
     ]
 }
@@ -191,12 +225,14 @@ async fn build_prompt_inlines_spec_and_prior_and_assignment() {
     let p = build_prompt(
         "SPEC TEXT",
         &[("Prior phase", "PRIOR BODY")],
-        Some(&megaresearcher_research::orchestrator::dispatch_plan::Assignment {
-            id: "x".into(),
-            role: "gap-finder".into(),
-            title: "T".into(),
-            body: "BODY".into(),
-        }),
+        Some(
+            &megaresearcher_research::orchestrator::dispatch_plan::Assignment {
+                id: "x".into(),
+                role: "gap-finder".into(),
+                title: "T".into(),
+                body: "BODY".into(),
+            },
+        ),
         tmp.path(),
     );
     assert!(p.contains("SPEC TEXT"));
@@ -218,8 +254,10 @@ async fn dispatch_wave_runs_two_scouts_writes_artifacts() {
     fs::create_dir_all(&dir2).unwrap();
 
     // 2 workers × 4 turns = 8 scripted turns, in dispatch order.
-    let turns: Vec<Vec<StreamEvent>> =
-        [three_artifact_turns(), three_artifact_turns()].into_iter().flatten().collect();
+    let turns: Vec<Vec<StreamEvent>> = [three_artifact_turns(), three_artifact_turns()]
+        .into_iter()
+        .flatten()
+        .collect();
     let fake = Arc::new(FakeProvider::new("fake", turns));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
 
@@ -275,11 +313,13 @@ async fn run_worker_resolves_inherit_model() {
     assert!(dir.join("output.md").exists());
 }
 
-use megaresearcher_research::orchestrator::gate::{
-    verify_wave, GateStatus, REQUIRED_ARTIFACTS,
-};
+use megaresearcher_research::orchestrator::gate::{verify_wave, GateStatus, REQUIRED_ARTIFACTS};
 
-fn spec_for(name: &str, dir: &Path, run_dir: &Path) -> megaresearcher_research::orchestrator::dispatch::WorkerSpec {
+fn spec_for(
+    name: &str,
+    dir: &Path,
+    run_dir: &Path,
+) -> megaresearcher_research::orchestrator::dispatch::WorkerSpec {
     megaresearcher_research::orchestrator::dispatch::WorkerSpec {
         name: name.into(),
         role: "literature-scout".into(),
@@ -298,9 +338,21 @@ async fn gate_passes_when_all_artifacts_present_first_try() {
     let fake = Arc::new(FakeProvider::new("fake", three_artifact_turns()));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
     let spec = spec_for("literature-scout-1", &dir, &run_dir);
-    let outcomes = [run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model").await.unwrap()];
+    let outcomes = [
+        run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model")
+            .await
+            .unwrap(),
+    ];
     let outcomes = vec![("literature-scout-1".to_string(), outcomes[0].clone())];
-    let gate = verify_wave(outcomes, std::slice::from_ref(&spec), &fixture_agents_dir(), provider, "fake-model").await.unwrap();
+    let gate = verify_wave(
+        outcomes,
+        std::slice::from_ref(&spec),
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+    )
+    .await
+    .unwrap();
     assert_eq!(gate.len(), 1);
     assert_eq!(gate[0].status, GateStatus::Passed);
     assert_eq!(gate[0].retries, 0);
@@ -325,9 +377,19 @@ async fn gate_retries_then_passes_on_missing_artifact() {
     let fake = Arc::new(FakeProvider::new("fake", turns));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
     let spec = spec_for("literature-scout-1", &dir, &run_dir);
-    let first = run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model").await.unwrap();
+    let first = run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model")
+        .await
+        .unwrap();
     let outcomes = vec![("literature-scout-1".to_string(), first)];
-    let gate = verify_wave(outcomes, std::slice::from_ref(&spec), &fixture_agents_dir(), provider, "fake-model").await.unwrap();
+    let gate = verify_wave(
+        outcomes,
+        std::slice::from_ref(&spec),
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+    )
+    .await
+    .unwrap();
     assert_eq!(gate[0].status, GateStatus::Passed);
     assert_eq!(gate[0].retries, 1);
     assert!(dir.join("verification.md").exists());
@@ -352,9 +414,19 @@ async fn gate_escalates_when_retry_still_missing() {
     let fake = Arc::new(FakeProvider::new("fake", turns));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
     let spec = spec_for("literature-scout-1", &dir, &run_dir);
-    let first = run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model").await.unwrap();
+    let first = run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model")
+        .await
+        .unwrap();
     let outcomes = vec![("literature-scout-1".to_string(), first)];
-    let gate = verify_wave(outcomes, std::slice::from_ref(&spec), &fixture_agents_dir(), provider, "fake-model").await.unwrap();
+    let gate = verify_wave(
+        outcomes,
+        std::slice::from_ref(&spec),
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+    )
+    .await
+    .unwrap();
     assert_eq!(gate[0].status, GateStatus::Escalated);
     assert_eq!(gate[0].retries, 1);
     assert!(!dir.join("verification.md").exists());
@@ -362,10 +434,15 @@ async fn gate_escalates_when_retry_still_missing() {
 
 #[test]
 fn required_artifacts_constant() {
-    assert_eq!(REQUIRED_ARTIFACTS, &["output.md", "manifest.yaml", "verification.md"]);
+    assert_eq!(
+        REQUIRED_ARTIFACTS,
+        &["output.md", "manifest.yaml", "verification.md"]
+    );
 }
 
-use megaresearcher_research::orchestrator::consolidate::{consolidate_bibliography, consolidate_gaps};
+use megaresearcher_research::orchestrator::consolidate::{
+    consolidate_bibliography, consolidate_gaps,
+};
 
 #[test]
 fn consolidate_bibliography_assembles_scout_outputs_in_order() {
@@ -431,7 +508,9 @@ fn fixture_spec_path() -> PathBuf {
 /// 4 workers (2 scouts, 1 gap-finder, 1 synthesist) × 4 turns = 16 turns.
 /// Used by Task 6 (3 workers, 12 turns — no synthesist yet) and Task 7 (16).
 fn run_turns(n_workers: usize) -> Vec<Vec<StreamEvent>> {
-    (0..n_workers).flat_map(|_| three_artifact_turns()).collect()
+    (0..n_workers)
+        .flat_map(|_| three_artifact_turns())
+        .collect()
 }
 
 fn run_dir_of(out: &RunOutcome) -> &std::path::Path {
@@ -459,7 +538,11 @@ async fn execute_phases_1_and_2_for_gap_finding() {
     );
 
     let out = orch
-        .execute(&fixture_spec_path(), &fixture_plan_path(), "2026-06-27-0315-a1b2c3")
+        .execute(
+            &fixture_spec_path(),
+            &fixture_plan_path(),
+            "2026-06-27-0315-a1b2c3",
+        )
         .await
         .unwrap();
 
@@ -486,8 +569,12 @@ async fn execute_phases_1_and_2_for_gap_finding() {
     assert_eq!(by_name["red-team"], "skipped");
     assert_eq!(by_name["eval-designer"], "skipped");
     assert_eq!(by_name["synthesist"], "complete"); // Task 7 fills this in.
-    // Each completed phase has its workers recorded.
-    let scouts = swarm.phases.iter().find(|p| p.name == "literature-scout").unwrap();
+                                                   // Each completed phase has its workers recorded.
+    let scouts = swarm
+        .phases
+        .iter()
+        .find(|p| p.name == "literature-scout")
+        .unwrap();
     assert_eq!(scouts.workers.len(), 2);
     assert!(scouts.workers.iter().all(|w| w.status == "passed"));
 }
@@ -521,8 +608,10 @@ async fn execute_halts_on_worker_escalation() {
         .unwrap_err();
     match err {
         OrchestratorError::Escalated(names) => {
-            assert!(names.contains(&"literature-scout-1".to_string()),
-                "expected literature-scout-1 in escalated names, got {names:?}");
+            assert!(
+                names.contains(&"literature-scout-1".to_string()),
+                "expected literature-scout-1 in escalated names, got {names:?}"
+            );
         }
         other => panic!("expected Escalated, got {other:?}"),
     }
@@ -545,7 +634,15 @@ async fn run_synthesist_inlines_all_outputs_and_writes_artifacts() {
     let fake = Arc::new(FakeProvider::new("fake", three_artifact_turns()));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
     let (spec, outcome) = run_synthesist(
-        &run_dir, "SPEC", "PLAN", &[s1], &[g1], &fixture_agents_dir(), provider, "fake-model", 1,
+        &run_dir,
+        "SPEC",
+        "PLAN",
+        &[s1],
+        &[g1],
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
     )
     .await
     .unwrap();
@@ -576,7 +673,10 @@ fn finalize_run_copies_output_and_creates_symlink() {
     let link = finalize_run(&run_dir, &spec_path, &research_base).unwrap();
     assert_eq!(link, research_base.join("specs/my-spec-latest.md"));
     // Run-root output.md is the copy of synthesist/output.md.
-    assert_eq!(fs::read_to_string(run_dir.join("output.md")).unwrap(), "FINAL OUTPUT");
+    assert_eq!(
+        fs::read_to_string(run_dir.join("output.md")).unwrap(),
+        "FINAL OUTPUT"
+    );
     // Symlink resolves to the run-root output.md.
     assert_eq!(fs::read_to_string(&link).unwrap(), "FINAL OUTPUT");
     // Re-running replaces the existing symlink (no error).
@@ -607,7 +707,10 @@ async fn full_gap_finding_integration_test() {
     fs::create_dir_all(spec_path.parent().unwrap()).unwrap();
     fs::copy(fixture_spec_path(), &spec_path).unwrap();
 
-    let out = orch.execute(&spec_path, &fixture_plan_path(), "2026-06-27-0315-a1b2c3").await.unwrap();
+    let out = orch
+        .execute(&spec_path, &fixture_plan_path(), "2026-06-27-0315-a1b2c3")
+        .await
+        .unwrap();
     let run_dir = out.run_dir.clone();
 
     // Full run tree.

@@ -67,7 +67,8 @@ pub async fn run_worker(
     } else {
         asset.model.clone()
     };
-    let read = Arc::new(ScopedRead::with_shared(&spec.output_dir, &spec.shared_dir)) as Arc<dyn Tool>;
+    let read =
+        Arc::new(ScopedRead::with_shared(&spec.output_dir, &spec.shared_dir)) as Arc<dyn Tool>;
     let write = Arc::new(ScopedWrite::new(&spec.output_dir)) as Arc<dyn Tool>;
     let worker = Worker::new(
         asset.body.clone(),
@@ -80,7 +81,10 @@ pub async fn run_worker(
         },
         spec.output_dir.clone(),
     );
-    worker.run(&spec.prompt).await.map_err(OrchestratorError::Worker)
+    worker
+        .run(&spec.prompt)
+        .await
+        .map_err(OrchestratorError::Worker)
 }
 
 /// Dispatch a wave of workers bounded by `max_parallel`. Returns outcomes
@@ -96,23 +100,27 @@ pub async fn dispatch_wave(
 ) -> Result<Vec<(String, WorkerOutcome)>, OrchestratorError> {
     let n = specs.len();
     let indexed: Vec<(usize, WorkerSpec)> = specs.into_iter().enumerate().collect();
-    let results: Vec<Result<(usize, String, WorkerOutcome), OrchestratorError>> = stream::iter(indexed)
-        .map(|(i, spec)| {
-            let provider = provider.clone();
-            async move {
-                run_worker(&spec, agents_dir, provider, default_model)
-                    .await
-                    .map(|o| (i, spec.name.clone(), o))
-            }
-        })
-        .buffer_unordered(max_parallel.max(1) as usize)
-        .collect()
-        .await;
+    let results: Vec<Result<(usize, String, WorkerOutcome), OrchestratorError>> =
+        stream::iter(indexed)
+            .map(|(i, spec)| {
+                let provider = provider.clone();
+                async move {
+                    run_worker(&spec, agents_dir, provider, default_model)
+                        .await
+                        .map(|o| (i, spec.name.clone(), o))
+                }
+            })
+            .buffer_unordered(max_parallel.max(1) as usize)
+            .collect()
+            .await;
 
     let mut collected: Vec<(usize, String, WorkerOutcome)> = Vec::with_capacity(n);
     for r in results {
         collected.push(r?);
     }
     collected.sort_by_key(|(i, _, _)| *i);
-    Ok(collected.into_iter().map(|(_, name, o)| (name, o)).collect())
+    Ok(collected
+        .into_iter()
+        .map(|(_, name, o)| (name, o))
+        .collect())
 }

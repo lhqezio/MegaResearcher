@@ -26,7 +26,12 @@ fn assemble(run_dir: &Path, dest: &str, header: &str, dirs: &[PathBuf]) -> io::R
 
 /// Assemble `run_dir/bibliography.md` from scout output.md files.
 pub fn consolidate_bibliography(run_dir: &Path, scout_dirs: &[PathBuf]) -> io::Result<PathBuf> {
-    assemble(run_dir, "bibliography.md", "# Consolidated bibliography", scout_dirs)
+    assemble(
+        run_dir,
+        "bibliography.md",
+        "# Consolidated bibliography",
+        scout_dirs,
+    )
 }
 
 /// Assemble `run_dir/gaps.md` from gap-finder output.md files.
