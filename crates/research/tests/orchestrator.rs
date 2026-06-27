@@ -745,3 +745,110 @@ async fn full_gap_finding_integration_test() {
     assert_eq!(by_name["synthesist"], "complete");
     assert!(out.escalations.is_empty());
 }
+
+use megaresearcher_research::orchestrator::gaps::{collect_gaps, parse_gaps};
+
+#[test]
+fn parse_gaps_reads_structured_gaps_list_from_manifest() {
+    let manifest = "\
+role: gap-finder
+slice: scouts 1-2
+gaps_count: 2
+discarded_count: 1
+gaps:
+  - id: gap-1
+    statement: Technique X never applied to A+B fusion.
+    type: unexplored-intersection
+  - id: gap-2
+    statement: Paper P and paper Q disagree on metric M.
+    type: contradiction
+";
+    let finder_dir = PathBuf::from("/tmp/run/gap-finder-1");
+    let gaps = parse_gaps(manifest, "gap-finder-1", &finder_dir);
+    assert_eq!(gaps.len(), 2);
+    assert_eq!(gaps[0].id, "gap-1");
+    assert_eq!(gaps[0].finder_name, "gap-finder-1");
+    assert_eq!(gaps[0].finder_dir, finder_dir);
+    assert_eq!(
+        gaps[0].statement,
+        "Technique X never applied to A+B fusion."
+    );
+    assert_eq!(gaps[0].gap_type, "unexplored-intersection");
+    assert_eq!(gaps[1].id, "gap-2");
+    assert_eq!(gaps[1].gap_type, "contradiction");
+}
+
+#[test]
+fn parse_gaps_returns_empty_when_manifest_has_no_gaps_block() {
+    // A v0-style manifest with only gaps_count (no structured `gaps:` list) yields
+    // zero gaps — the orchestrator then dispatches no smiths. serde(default) makes
+    // the missing field parse cleanly.
+    let manifest = "role: gap-finder\ngaps_count: 3\ndiscarded_count: 1\n";
+    let gaps = parse_gaps(manifest, "gap-finder-2", Path::new("/tmp/r/gap-finder-2"));
+    assert!(gaps.is_empty());
+}
+
+#[test]
+fn parse_gaps_skips_gaps_with_empty_statement() {
+    let manifest = "\
+gaps:
+  - id: gap-1
+    statement: A defensible gap.
+    type: contradiction
+  - id: gap-2
+    statement: ''
+    type: missing-baseline
+";
+    let gaps = parse_gaps(manifest, "gap-finder-1", Path::new("/tmp/r/gap-finder-1"));
+    assert_eq!(gaps.len(), 1);
+    assert_eq!(gaps[0].id, "gap-1");
+}
+
+#[test]
+fn collect_gaps_aggregates_across_gap_finders_in_order() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("run");
+    let g1 = run_dir.join("gap-finder-1");
+    let g2 = run_dir.join("gap-finder-2");
+    fs::create_dir_all(&g1).unwrap();
+    fs::create_dir_all(&g2).unwrap();
+    fs::write(
+        g1.join("manifest.yaml"),
+        "role: gap-finder\ngaps:\n  - id: gap-1\n    statement: A.\n    type: contradiction\n  - id: gap-2\n    statement: B.\n    type: missing-baseline\n",
+    )
+    .unwrap();
+    fs::write(
+        g2.join("manifest.yaml"),
+        "role: gap-finder\ngaps:\n  - id: gap-1\n    statement: C.\n    type: unexplored-intersection\n",
+    )
+    .unwrap();
+    let gaps = collect_gaps(&run_dir, &[g1.clone(), g2.clone()]).unwrap();
+    assert_eq!(gaps.len(), 3);
+    // finder-then-gap order; ids are finder-local, so "gap-1" repeats across finders.
+    assert_eq!(gaps[0].finder_name, "gap-finder-1");
+    assert_eq!(gaps[0].statement, "A.");
+    assert_eq!(gaps[1].finder_name, "gap-finder-1");
+    assert_eq!(gaps[1].statement, "B.");
+    assert_eq!(gaps[2].finder_name, "gap-finder-2");
+    assert_eq!(gaps[2].statement, "C.");
+    assert_eq!(gaps[2].finder_dir, g2);
+}
+
+#[test]
+fn collect_gaps_skips_finders_whose_manifest_is_unreadable() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("run");
+    let g1 = run_dir.join("gap-finder-1");
+    let g2 = run_dir.join("gap-finder-2"); // no manifest written
+    fs::create_dir_all(&g1).unwrap();
+    fs::create_dir_all(&g2).unwrap();
+    fs::write(
+        g1.join("manifest.yaml"),
+        "role: gap-finder\ngaps:\n  - id: gap-1\n    statement: A.\n    type: contradiction\n",
+    )
+    .unwrap();
+    // g2 has no manifest.yaml -> collect_gaps skips it (no error, no gaps from it).
+    let gaps = collect_gaps(&run_dir, &[g1, g2]).unwrap();
+    assert_eq!(gaps.len(), 1);
+    assert_eq!(gaps[0].statement, "A.");
+}
