@@ -8,6 +8,9 @@
 //! doom-loop discipline trait.
 
 pub mod paper_chain;
+pub mod prompt_asset;
 pub mod state;
+pub mod worker;
+pub mod worker_tools;
 
 pub const CRATE_NAME: &str = "megaresearcher-research";
