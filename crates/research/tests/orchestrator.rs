@@ -1,10 +1,6 @@
 //! Orchestrator tests: pre-flight, run setup, dispatch, gate, consolidate,
 //! execute, and the gap-finding integration test.
 
-// `mod common;` pulls in `fake_provider`, which later tasks (Task 3 dispatch
-// tests) consume. Until then it is dead code in this test binary; allow it
-// here rather than editing the shared helper.
-#[allow(dead_code)]
 mod common;
 
 use std::fs;
@@ -133,4 +129,148 @@ fn write_swarm_round_trips() {
 #[allow(dead_code)]
 fn _touch_run_dir(base: &std::path::Path) {
     let _ = run_dir(base, "x");
+}
+
+use std::sync::Arc;
+
+use claurst_api::{LlmProvider, StopReason, StreamEvent};
+use claurst_core::types::{ContentBlock, UsageInfo};
+use serde_json::json;
+
+use common::fake_provider::FakeProvider;
+use megaresearcher_research::orchestrator::dispatch::{
+    build_prompt, dispatch_wave, run_worker, WorkerSpec,
+};
+use megaresearcher_research::worker::WorkerStop;
+
+fn write_turn(file: &str, content: &str) -> Vec<StreamEvent> {
+    vec![
+        StreamEvent::MessageStart { id: "m".into(), model: "fake".into(), usage: UsageInfo::default() },
+        StreamEvent::ContentBlockStart { index: 0, content_block: ContentBlock::Text { text: String::new() } },
+        StreamEvent::TextDelta { index: 0, text: format!("writing {file}") },
+        StreamEvent::ContentBlockStop { index: 0 },
+        StreamEvent::ContentBlockStart { index: 1, content_block: ContentBlock::ToolUse {
+            id: format!("tu_{file}"), name: "Write".into(),
+            input: json!({ "file_path": file, "content": content }),
+        } },
+        StreamEvent::ContentBlockStop { index: 1 },
+        StreamEvent::MessageDelta { stop_reason: Some(StopReason::ToolUse), usage: Some(UsageInfo::default()) },
+        StreamEvent::MessageStop,
+    ]
+}
+
+fn final_turn(text: &str) -> Vec<StreamEvent> {
+    vec![
+        StreamEvent::MessageStart { id: "m".into(), model: "fake".into(), usage: UsageInfo::default() },
+        StreamEvent::ContentBlockStart { index: 0, content_block: ContentBlock::Text { text: String::new() } },
+        StreamEvent::TextDelta { index: 0, text: text.into() },
+        StreamEvent::ContentBlockStop { index: 0 },
+        StreamEvent::MessageDelta { stop_reason: Some(StopReason::EndTurn), usage: Some(UsageInfo::default()) },
+        StreamEvent::MessageStop,
+    ]
+}
+
+/// The standard 4-turn "write three artifacts + final" sequence one worker
+/// consumes. Repeated per worker for a multi-worker run.
+fn three_artifact_turns() -> Vec<Vec<StreamEvent>> {
+    vec![
+        write_turn("output.md", "# Output\n\ncontent"),
+        write_turn("manifest.yaml", "role: literature-scout\n"),
+        write_turn("verification.md", "# Verification\n\nok"),
+        final_turn("Done."),
+    ]
+}
+
+fn fixture_agents_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/agents")
+}
+
+#[tokio::test]
+async fn build_prompt_inlines_spec_and_prior_and_assignment() {
+    let tmp = tempdir().unwrap();
+    let p = build_prompt(
+        "SPEC TEXT",
+        &[("Prior phase", "PRIOR BODY")],
+        Some(&megaresearcher_research::orchestrator::dispatch_plan::Assignment {
+            id: "x".into(),
+            role: "gap-finder".into(),
+            title: "T".into(),
+            body: "BODY".into(),
+        }),
+        tmp.path(),
+    );
+    assert!(p.contains("SPEC TEXT"));
+    assert!(p.contains("Prior phase"));
+    assert!(p.contains("PRIOR BODY"));
+    assert!(p.contains("T"));
+    assert!(p.contains("BODY"));
+    assert!(p.contains(tmp.path().to_string_lossy().as_ref()));
+}
+
+#[tokio::test]
+async fn dispatch_wave_runs_two_scouts_writes_artifacts() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("runs/rid");
+    fs::create_dir_all(&run_dir).unwrap();
+    let dir1 = run_dir.join("literature-scout-1");
+    let dir2 = run_dir.join("literature-scout-2");
+    fs::create_dir_all(&dir1).unwrap();
+    fs::create_dir_all(&dir2).unwrap();
+
+    // 2 workers × 4 turns = 8 scripted turns, in dispatch order.
+    let turns: Vec<Vec<StreamEvent>> =
+        [three_artifact_turns(), three_artifact_turns()].into_iter().flatten().collect();
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+
+    let specs = vec![
+        WorkerSpec {
+            name: "literature-scout-1".into(),
+            role: "literature-scout".into(),
+            output_dir: dir1.clone(),
+            shared_dir: run_dir.clone(),
+            prompt: build_prompt("SPEC", &[], None, &dir1),
+        },
+        WorkerSpec {
+            name: "literature-scout-2".into(),
+            role: "literature-scout".into(),
+            output_dir: dir2.clone(),
+            shared_dir: run_dir.clone(),
+            prompt: build_prompt("SPEC", &[], None, &dir2),
+        },
+    ];
+    let outcomes = dispatch_wave(specs, &fixture_agents_dir(), provider, "fake-model", 1)
+        .await
+        .unwrap();
+    assert_eq!(outcomes.len(), 2);
+    assert_eq!(outcomes[0].0, "literature-scout-1");
+    assert_eq!(outcomes[0].1.stop, WorkerStop::EndTurn);
+    assert_eq!(outcomes[1].0, "literature-scout-2");
+    assert!(dir1.join("output.md").exists());
+    assert!(dir1.join("manifest.yaml").exists());
+    assert!(dir1.join("verification.md").exists());
+    assert!(dir2.join("output.md").exists());
+    assert_eq!(fake.call_count(), 8);
+}
+
+#[tokio::test]
+async fn run_worker_resolves_inherit_model() {
+    let tmp = tempdir().unwrap();
+    let dir = tmp.path().join("w");
+    fs::create_dir_all(&dir).unwrap();
+    let spec = WorkerSpec {
+        name: "literature-scout-1".into(),
+        role: "literature-scout".into(),
+        output_dir: dir.clone(),
+        shared_dir: tmp.path().to_path_buf(),
+        prompt: build_prompt("S", &[], None, &dir),
+    };
+    // literature-scout.md has model: inherit (Phase 3 fixture). default_model applies.
+    let fake = Arc::new(FakeProvider::new("fake", three_artifact_turns()));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let outcome = run_worker(&spec, &fixture_agents_dir(), provider, "resolved-model")
+        .await
+        .unwrap();
+    assert_eq!(outcome.stop, WorkerStop::EndTurn);
+    assert!(dir.join("output.md").exists());
 }
