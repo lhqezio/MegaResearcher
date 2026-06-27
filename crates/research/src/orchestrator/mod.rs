@@ -9,6 +9,7 @@ pub mod gaps;
 pub mod gate;
 pub mod hypothesis;
 pub mod preflight;
+pub mod redteam;
 pub mod synthesize;
 pub mod verdict;
 

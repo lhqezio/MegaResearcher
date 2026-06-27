@@ -1098,3 +1098,205 @@ async fn redispatch_smith_revision_overwrites_output_and_gates() {
     assert!(hyp.dir.join("manifest.yaml").exists());
     assert_eq!(fake.call_count(), 4);
 }
+
+use std::collections::HashMap;
+
+use megaresearcher_research::orchestrator::redteam::{build_redteam_prompt, run_redteam_loop};
+
+// Helper: scripted turns that write output.md with a given verdict line plus
+// the standard manifest + verification, then EndTurn.
+fn redteam_turns(verdict_line: &str) -> Vec<Vec<StreamEvent>> {
+    let output =
+        format!("# Red-team critique\n\n1. **Verdict** — {verdict_line}\n\n2. Discussion.\n");
+    vec![
+        write_turn("output.md", &output),
+        write_turn(
+            "manifest.yaml",
+            "role: red-team\nverdict: APPROVE\nrevision_round: 1\n",
+        ),
+        write_turn("verification.md", "# Verification\n\nok"),
+        final_turn("Done."),
+    ]
+}
+
+#[test]
+fn build_redteam_prompt_inlines_hypothesis_and_finder_output() {
+    let tmp = tempdir().unwrap();
+    let spec = build_redteam_prompt(
+        "SPEC TEXT",
+        "HYPOTHESIS OUTPUT BODY",
+        "GAP-FINDER OUTPUT BODY",
+        &tmp.path().join("red-team-1-r1"),
+    );
+    assert_eq!(spec.name, "red-team-1-r1");
+    assert_eq!(spec.role, "red-team");
+    assert!(spec.prompt.contains("SPEC TEXT"));
+    assert!(spec.prompt.contains("HYPOTHESIS OUTPUT BODY"));
+    assert!(spec.prompt.contains("GAP-FINDER OUTPUT BODY"));
+}
+
+#[tokio::test]
+async fn redteam_loop_approves_on_first_round() {
+    let (swarm, hyps, run_dir) = redteam_loop_fixture(1);
+    // 1 hypothesis, 1 red-team round APPROVE -> 4 turns.
+    let fake = Arc::new(FakeProvider::new("fake", redteam_turns("APPROVE")));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let mut swarm = swarm;
+    let res = run_redteam_loop(
+        &run_dir,
+        "SPEC",
+        hyps,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+        &mut swarm,
+    )
+    .await
+    .unwrap();
+    assert_eq!(res.survivors.len(), 1);
+    assert!(res.killed.is_empty());
+    assert_eq!(res.redteam_dirs.len(), 1);
+    assert!(res.redteam_dirs[0].ends_with("red-team-1-r1"));
+    assert!(swarm.escalations.is_empty());
+    assert_eq!(swarm.retry_counts.get("hypothesis-smith-1"), None);
+}
+
+#[tokio::test]
+async fn redteam_loop_revises_then_approves() {
+    let (swarm, hyps, run_dir) = redteam_loop_fixture(1);
+    // Round 1: REJECT (revision-1) -> revise smith (4 turns) + round 2 red-team APPROVE (4 turns).
+    // Plus the initial round-1 red-team (4 turns) = 12 turns total.
+    let turns: Vec<Vec<StreamEvent>> = {
+        let mut t = redteam_turns("REJECT (revision-1)");
+        // revision smith: 4 artifact turns (writes a revised output.md).
+        t.extend(run_turns(1));
+        // round-2 red-team: APPROVE.
+        t.extend(redteam_turns("APPROVE"));
+        t
+    };
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let mut swarm = swarm;
+    let res = run_redteam_loop(
+        &run_dir,
+        "SPEC",
+        hyps,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+        &mut swarm,
+    )
+    .await
+    .unwrap();
+    assert_eq!(res.survivors.len(), 1);
+    assert!(res.killed.is_empty());
+    assert_eq!(res.redteam_dirs.len(), 2);
+    assert!(res.redteam_dirs[0].ends_with("red-team-1-r1"));
+    assert!(res.redteam_dirs[1].ends_with("red-team-1-r2"));
+    assert_eq!(swarm.retry_counts.get("hypothesis-smith-1"), Some(&1));
+    assert!(swarm.escalations.is_empty());
+}
+
+#[tokio::test]
+async fn redteam_loop_kills_on_kill_verdict() {
+    let (swarm, hyps, run_dir) = redteam_loop_fixture(1);
+    let fake = Arc::new(FakeProvider::new(
+        "fake",
+        redteam_turns("KILL (irrecoverable)"),
+    ));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let mut swarm = swarm;
+    let res = run_redteam_loop(
+        &run_dir,
+        "SPEC",
+        hyps,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+        &mut swarm,
+    )
+    .await
+    .unwrap();
+    assert!(res.survivors.is_empty());
+    assert_eq!(res.killed, vec!["hypothesis-smith-1".to_string()]);
+    assert_eq!(res.redteam_dirs.len(), 1);
+    assert_eq!(swarm.escalations.len(), 1);
+    assert_eq!(swarm.escalations[0].worker, "hypothesis-smith-1");
+    assert!(swarm.escalations[0].reason.contains("KILL"));
+}
+
+#[tokio::test]
+async fn redteam_loop_escalates_after_three_revisions() {
+    let (swarm, hyps, run_dir) = redteam_loop_fixture(1);
+    // Rounds 1-3: REJECT (revision-1/2/3) each -> revise smith; round 4 would be
+    // revision_count==3 -> escalate WITHOUT dispatching a 4th red-team.
+    // Turn sequence: r1-redteam(4) + revise(4) + r2-redteam(4) + revise(4) +
+    // r3-redteam(4) + revise(4) = 24 turns. (No r4 red-team: cap reached at
+    // revision_count==3 after the 3rd REJECT.)
+    let turns: Vec<Vec<StreamEvent>> = {
+        let mut t = Vec::new();
+        for n in 1..=3 {
+            t.extend(redteam_turns(&format!("REJECT (revision-{n})")));
+            t.extend(run_turns(1)); // revision smith
+        }
+        t
+    };
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let mut swarm = swarm;
+    let res = run_redteam_loop(
+        &run_dir,
+        "SPEC",
+        hyps,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+        &mut swarm,
+    )
+    .await
+    .unwrap();
+    assert!(res.survivors.is_empty());
+    assert_eq!(res.killed, vec!["hypothesis-smith-1".to_string()]);
+    assert_eq!(res.redteam_dirs.len(), 3); // r1, r2, r3
+    assert_eq!(swarm.retry_counts.get("hypothesis-smith-1"), Some(&3));
+    assert_eq!(swarm.escalations.len(), 1);
+    assert!(swarm.escalations[0]
+        .reason
+        .contains("exceeded 3 red-team revisions"));
+}
+
+// Shared fixture builder for the loop tests: one hypothesis in a run dir.
+fn redteam_loop_fixture(n: usize) -> (SwarmState, Vec<Hypothesis>, PathBuf) {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("run");
+    let finder_dir = run_dir.join("gap-finder-1");
+    fs::create_dir_all(&finder_dir).unwrap();
+    fs::write(finder_dir.join("output.md"), "FINDER BODY").unwrap();
+    let hyps: Vec<Hypothesis> = (1..=n)
+        .map(|i| {
+            let dir = run_dir.join(format!("hypothesis-smith-{i}"));
+            fs::create_dir_all(&dir).unwrap();
+            fs::write(dir.join("output.md"), format!("HYPOTHESIS {i}")).unwrap();
+            Hypothesis {
+                name: format!("hypothesis-smith-{i}"),
+                dir,
+                gap: gap("gap-1", "gap-finder-1", &finder_dir, "The gap."),
+            }
+        })
+        .collect();
+    let swarm = SwarmState {
+        run_id: "rid".into(),
+        spec_path: "s".into(),
+        plan_path: "p".into(),
+        novelty_target: "hypothesis".into(),
+        max_parallel: 1,
+        phases: vec![],
+        escalations: vec![],
+        retry_counts: HashMap::new(),
+    };
+    (swarm, hyps, run_dir)
+}
