@@ -1,8 +1,13 @@
 //! MegaResearcher v1 — the research layer.
 //!
-//! This crate holds the swarm orchestrator, the leaf worker primitive, the
-//! front-half guided phases, the paper chain, run-state management, the HTML
-//! export, and the doom-loop discipline trait. All of those are implemented in
-//! later phases; Phase 1 only stands the crate up so the workspace includes it.
+//! Phase 2 ports the pure-logic paper-chain modules and the run-state module
+//! from the v0 Python plugin (`lib/paper_chain/*` plus the orchestrator skill's
+//! `swarm-state.yaml` schema) to deterministic Rust. No LLM is involved yet —
+//! these are 1:1 ports with 1:1 tests. Later phases add the orchestrator, the
+//! worker primitive, the front-half guided phases, the HTML export, and the
+//! doom-loop discipline trait.
+
+pub mod paper_chain;
+pub mod state;
 
 pub const CRATE_NAME: &str = "megaresearcher-research";

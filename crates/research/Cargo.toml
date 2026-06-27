@@ -6,6 +6,15 @@ license.workspace = true
 
 [dependencies]
 claurst-core = { workspace = true }
+chrono = { workspace = true }
+getrandom = { workspace = true }
+once_cell = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_yml = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
 
 [lib]
 name = "megaresearcher_research"
