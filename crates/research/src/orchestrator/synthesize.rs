@@ -80,6 +80,7 @@ pub async fn run_synthesist(
         provider,
         default_model,
         max_parallel,
+        &[],
     )
     .await?;
     let (_, outcome) = outcomes

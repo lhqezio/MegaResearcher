@@ -111,6 +111,7 @@ pub async fn run_redteam_loop(
                 provider.clone(),
                 default_model,
                 max_parallel.max(1),
+                &[],
             )
             .await?;
             let gates = verify_wave(
@@ -119,6 +120,7 @@ pub async fn run_redteam_loop(
                 agents_dir,
                 provider.clone(),
                 default_model,
+                &[],
             )
             .await?;
             if gates[0].status == GateStatus::Escalated {

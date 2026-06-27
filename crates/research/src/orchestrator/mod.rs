@@ -146,6 +146,7 @@ impl Orchestrator {
             self.provider.clone(),
             &self.config.default_model,
             self.config.max_parallel,
+            &[],
         )
         .await?;
         let scout_gates = verify_wave(
@@ -154,6 +155,7 @@ impl Orchestrator {
             &self.config.agents_dir,
             self.provider.clone(),
             &self.config.default_model,
+            &[],
         )
         .await?;
         let scout_workers: Vec<(String, String)> = scout_gates
@@ -212,6 +214,7 @@ impl Orchestrator {
             self.provider.clone(),
             &self.config.default_model,
             self.config.max_parallel,
+            &[],
         )
         .await?;
         let gap_gates = verify_wave(
@@ -220,6 +223,7 @@ impl Orchestrator {
             &self.config.agents_dir,
             self.provider.clone(),
             &self.config.default_model,
+            &[],
         )
         .await?;
         let gap_workers: Vec<(String, String)> = gap_gates
@@ -341,6 +345,7 @@ impl Orchestrator {
             &self.config.agents_dir,
             self.provider.clone(),
             &self.config.default_model,
+            &[],
         )
         .await?;
         let synth_status = gate_status_str(synth_gates[0].status);

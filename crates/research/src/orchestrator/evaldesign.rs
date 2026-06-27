@@ -96,9 +96,10 @@ pub async fn run_eval_designers(
         provider.clone(),
         default_model,
         max_parallel,
+        &[],
     )
     .await?;
-    let gates = verify_wave(outcomes, &specs, agents_dir, provider, default_model).await?;
+    let gates = verify_wave(outcomes, &specs, agents_dir, provider, default_model, &[]).await?;
 
     let mut eval_dirs = Vec::with_capacity(specs.len());
     let mut phase_workers = Vec::with_capacity(specs.len());

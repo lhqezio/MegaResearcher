@@ -277,7 +277,7 @@ async fn dispatch_wave_runs_two_scouts_writes_artifacts() {
             prompt: build_prompt("SPEC", &[], None, &dir2),
         },
     ];
-    let outcomes = dispatch_wave(specs, &fixture_agents_dir(), provider, "fake-model", 1)
+    let outcomes = dispatch_wave(specs, &fixture_agents_dir(), provider, "fake-model", 1, &[])
         .await
         .unwrap();
     assert_eq!(outcomes.len(), 2);
@@ -306,9 +306,15 @@ async fn run_worker_resolves_inherit_model() {
     // literature-scout.md has model: inherit (Phase 3 fixture). default_model applies.
     let fake = Arc::new(FakeProvider::new("fake", three_artifact_turns()));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
-    let outcome = run_worker(&spec, &fixture_agents_dir(), provider, "resolved-model")
-        .await
-        .unwrap();
+    let outcome = run_worker(
+        &spec,
+        &fixture_agents_dir(),
+        provider,
+        "resolved-model",
+        &[],
+    )
+    .await
+    .unwrap();
     assert_eq!(outcome.stop, WorkerStop::EndTurn);
     assert!(dir.join("output.md").exists());
 }
@@ -338,11 +344,15 @@ async fn gate_passes_when_all_artifacts_present_first_try() {
     let fake = Arc::new(FakeProvider::new("fake", three_artifact_turns()));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
     let spec = spec_for("literature-scout-1", &dir, &run_dir);
-    let outcomes = [
-        run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model")
-            .await
-            .unwrap(),
-    ];
+    let outcomes = [run_worker(
+        &spec,
+        &fixture_agents_dir(),
+        provider.clone(),
+        "fake-model",
+        &[],
+    )
+    .await
+    .unwrap()];
     let outcomes = vec![("literature-scout-1".to_string(), outcomes[0].clone())];
     let gate = verify_wave(
         outcomes,
@@ -350,6 +360,7 @@ async fn gate_passes_when_all_artifacts_present_first_try() {
         &fixture_agents_dir(),
         provider,
         "fake-model",
+        &[],
     )
     .await
     .unwrap();
@@ -377,9 +388,15 @@ async fn gate_retries_then_passes_on_missing_artifact() {
     let fake = Arc::new(FakeProvider::new("fake", turns));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
     let spec = spec_for("literature-scout-1", &dir, &run_dir);
-    let first = run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model")
-        .await
-        .unwrap();
+    let first = run_worker(
+        &spec,
+        &fixture_agents_dir(),
+        provider.clone(),
+        "fake-model",
+        &[],
+    )
+    .await
+    .unwrap();
     let outcomes = vec![("literature-scout-1".to_string(), first)];
     let gate = verify_wave(
         outcomes,
@@ -387,6 +404,7 @@ async fn gate_retries_then_passes_on_missing_artifact() {
         &fixture_agents_dir(),
         provider,
         "fake-model",
+        &[],
     )
     .await
     .unwrap();
@@ -414,9 +432,15 @@ async fn gate_escalates_when_retry_still_missing() {
     let fake = Arc::new(FakeProvider::new("fake", turns));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
     let spec = spec_for("literature-scout-1", &dir, &run_dir);
-    let first = run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model")
-        .await
-        .unwrap();
+    let first = run_worker(
+        &spec,
+        &fixture_agents_dir(),
+        provider.clone(),
+        "fake-model",
+        &[],
+    )
+    .await
+    .unwrap();
     let outcomes = vec![("literature-scout-1".to_string(), first)];
     let gate = verify_wave(
         outcomes,
@@ -424,6 +448,7 @@ async fn gate_escalates_when_retry_still_missing() {
         &fixture_agents_dir(),
         provider,
         "fake-model",
+        &[],
     )
     .await
     .unwrap();

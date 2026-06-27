@@ -53,12 +53,14 @@ pub fn build_prompt(
 }
 
 /// Run a single worker: load its agent prompt asset, resolve the model,
-/// wire jailed Read/Write tools, and drive the worker.
+/// wire jailed Read/Write tools plus any `extra_tools` (MCP tools), and drive
+/// the worker.
 pub async fn run_worker(
     spec: &WorkerSpec,
     agents_dir: &Path,
     provider: Arc<dyn LlmProvider>,
     default_model: &str,
+    extra_tools: &[Arc<dyn Tool>],
 ) -> Result<WorkerOutcome, OrchestratorError> {
     let asset_path = agents_dir.join(format!("{}.md", spec.role));
     let asset = load_asset(&asset_path).map_err(OrchestratorError::Io)?;
@@ -70,9 +72,11 @@ pub async fn run_worker(
     let read =
         Arc::new(ScopedRead::with_shared(&spec.output_dir, &spec.shared_dir)) as Arc<dyn Tool>;
     let write = Arc::new(ScopedWrite::new(&spec.output_dir)) as Arc<dyn Tool>;
+    let mut tools: Vec<Arc<dyn Tool>> = vec![read, write];
+    tools.extend(extra_tools.iter().cloned());
     let worker = Worker::new(
         asset.body.clone(),
-        vec![read, write],
+        tools,
         provider,
         WorkerConfig {
             max_turns: 50,
@@ -97,6 +101,7 @@ pub async fn dispatch_wave(
     provider: Arc<dyn LlmProvider>,
     default_model: &str,
     max_parallel: u32,
+    extra_tools: &[Arc<dyn Tool>],
 ) -> Result<Vec<(String, WorkerOutcome)>, OrchestratorError> {
     let n = specs.len();
     let indexed: Vec<(usize, WorkerSpec)> = specs.into_iter().enumerate().collect();
@@ -105,7 +110,7 @@ pub async fn dispatch_wave(
             .map(|(i, spec)| {
                 let provider = provider.clone();
                 async move {
-                    run_worker(&spec, agents_dir, provider, default_model)
+                    run_worker(&spec, agents_dir, provider, default_model, extra_tools)
                         .await
                         .map(|o| (i, spec.name.clone(), o))
                 }

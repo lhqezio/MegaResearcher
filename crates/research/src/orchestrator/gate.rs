@@ -10,7 +10,7 @@ use claurst_api::LlmProvider;
 use crate::orchestrator::dispatch::{run_worker, WorkerSpec};
 use crate::orchestrator::OrchestratorError;
 use crate::worker::WorkerOutcome;
-use crate::worker_tools::check_artifacts;
+use crate::worker_tools::{check_artifacts, Tool};
 
 /// The three artifacts every worker must write.
 pub const REQUIRED_ARTIFACTS: &[&str] = &["output.md", "manifest.yaml", "verification.md"];
@@ -37,6 +37,7 @@ pub async fn verify_wave(
     agents_dir: &Path,
     provider: Arc<dyn LlmProvider>,
     default_model: &str,
+    extra_tools: &[Arc<dyn Tool>],
 ) -> Result<Vec<GateOutcome>, OrchestratorError> {
     let mut results = Vec::with_capacity(outcomes.len());
     for (name, _first) in outcomes {
@@ -55,7 +56,14 @@ pub async fn verify_wave(
         }
         // One retry with the missing list appended.
         let retry = retry_spec(spec, &missing);
-        run_worker(&retry, agents_dir, provider.clone(), default_model).await?;
+        run_worker(
+            &retry,
+            agents_dir,
+            provider.clone(),
+            default_model,
+            extra_tools,
+        )
+        .await?;
         let still_missing = check_artifacts(&spec.output_dir, REQUIRED_ARTIFACTS);
         let status = if still_missing.is_empty() {
             GateStatus::Passed

@@ -89,9 +89,10 @@ pub async fn dispatch_hypothesis_smiths(
         provider.clone(),
         default_model,
         max_parallel,
+        &[],
     )
     .await?;
-    let gates = verify_wave(outcomes, &specs, agents_dir, provider, default_model).await?;
+    let gates = verify_wave(outcomes, &specs, agents_dir, provider, default_model, &[]).await?;
     let escalated: Vec<String> = gates
         .iter()
         .filter(|g| g.status == GateStatus::Escalated)
@@ -136,6 +137,7 @@ pub async fn redispatch_smith_revision(
         provider.clone(),
         default_model,
         1,
+        &[],
     )
     .await?;
     let gates = verify_wave(
@@ -144,6 +146,7 @@ pub async fn redispatch_smith_revision(
         agents_dir,
         provider,
         default_model,
+        &[],
     )
     .await?;
     if gates[0].status == GateStatus::Escalated {
