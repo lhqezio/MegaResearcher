@@ -195,7 +195,7 @@ impl Worker {
 
 /// Accumulate a stream of `StreamEvent`s into finalized `ContentBlock`s in
 /// ascending block-index order, plus the final stop reason and usage.
-async fn accumulate(
+pub(crate) async fn accumulate(
     stream: Pin<Box<dyn Stream<Item = Result<StreamEvent, ProviderError>> + Send>>,
 ) -> Result<(Vec<ContentBlock>, Option<StopReason>, Option<UsageInfo>), WorkerError> {
     let mut seeds: BTreeMap<usize, ContentBlock> = BTreeMap::new();
