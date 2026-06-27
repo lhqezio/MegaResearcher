@@ -79,8 +79,6 @@ pub async fn run_redteam_loop(
             .unwrap_or(0);
         let finder_output = fs::read_to_string(hyp.gap.finder_dir.join("output.md"))
             .unwrap_or_else(|_| "(no output.md)".to_string());
-        let hypothesis_output = fs::read_to_string(hyp.dir.join("output.md"))
-            .unwrap_or_else(|_| "(no output.md)".to_string());
 
         let mut revision_count: u32 = 0;
         loop {
@@ -99,6 +97,10 @@ pub async fn run_redteam_loop(
                 killed.push(hyp.name.clone());
                 break;
             }
+            // Read the hypothesis fresh each round so revisions (which overwrite
+            // hypothesis-smith-<N>/output.md) are re-critiqued, not the stale original.
+            let hypothesis_output = fs::read_to_string(hyp.dir.join("output.md"))
+                .unwrap_or_else(|_| "(no output.md)".to_string());
             let round = revision_count + 1;
             let rt_dir = run_dir.join(format!("red-team-{n}-r{round}"));
             fs::create_dir_all(&rt_dir).ok();
