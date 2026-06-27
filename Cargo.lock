@@ -2466,14 +2466,17 @@ version = "0.1.6"
 dependencies = [
  "async-trait",
  "chrono",
+ "claurst-api",
  "claurst-core",
  "futures",
  "getrandom 0.2.17",
  "once_cell",
  "regex",
  "serde",
+ "serde_json",
  "serde_yml",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]
