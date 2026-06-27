@@ -415,3 +415,115 @@ fn consolidate_handles_missing_output_md() {
     let text = fs::read_to_string(&out).unwrap();
     assert!(text.contains("(no output.md)"));
 }
+
+use megaresearcher_research::orchestrator::{
+    Orchestrator, OrchestratorConfig, OrchestratorError, RunOutcome,
+};
+// SwarmState already imported at the top of this file.
+
+fn fixture_plan_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/plans/gap-finding-plan.md")
+}
+fn fixture_spec_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/specs/gap-finding-spec.md")
+}
+
+/// 4 workers (2 scouts, 1 gap-finder, 1 synthesist) × 4 turns = 16 turns.
+/// Used by Task 6 (3 workers, 12 turns — no synthesist yet) and Task 7 (16).
+fn run_turns(n_workers: usize) -> Vec<Vec<StreamEvent>> {
+    (0..n_workers).flat_map(|_| three_artifact_turns()).collect()
+}
+
+fn run_dir_of(out: &RunOutcome) -> &std::path::Path {
+    &out.run_dir
+}
+
+#[tokio::test]
+async fn execute_phases_1_and_2_for_gap_finding() {
+    let tmp = tempdir().unwrap();
+    let research_base = tmp.path().join("research");
+    let agents = fixture_agents_dir();
+    fs::create_dir_all(&research_base).unwrap();
+
+    // 3 workers: 2 scouts + 1 gap-finder. 3 × 4 = 12 scripted turns.
+    let fake = Arc::new(FakeProvider::new("fake", run_turns(3)));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let orch = Orchestrator::new(
+        OrchestratorConfig {
+            research_base: research_base.clone(),
+            agents_dir: agents,
+            default_model: "fake-model".into(),
+            max_parallel: 1,
+        },
+        provider,
+    );
+
+    let out = orch
+        .execute(&fixture_spec_path(), &fixture_plan_path(), "2026-06-27-0315-a1b2c3")
+        .await
+        .unwrap();
+
+    let run_dir = run_dir_of(&out).to_path_buf();
+    assert_eq!(out.run_id, "2026-06-27-0315-a1b2c3");
+    // Run tree.
+    assert!(run_dir.join("swarm-state.yaml").exists());
+    assert!(run_dir.join("literature-scout-1/output.md").exists());
+    assert!(run_dir.join("literature-scout-2/output.md").exists());
+    assert!(run_dir.join("gap-finder-1/output.md").exists());
+    assert!(run_dir.join("bibliography.md").exists());
+    assert!(run_dir.join("gaps.md").exists());
+
+    // Swarm-state phase statuses.
+    let swarm = SwarmState::read(&run_dir.join("swarm-state.yaml")).unwrap();
+    let by_name: std::collections::HashMap<&str, &str> = swarm
+        .phases
+        .iter()
+        .map(|p| (p.name.as_str(), p.status.as_str()))
+        .collect();
+    assert_eq!(by_name["literature-scout"], "complete");
+    assert_eq!(by_name["gap-finder"], "complete");
+    assert_eq!(by_name["hypothesis-smith"], "skipped");
+    assert_eq!(by_name["red-team"], "skipped");
+    assert_eq!(by_name["eval-designer"], "skipped");
+    assert_eq!(by_name["synthesist"], "pending"); // Task 7 fills this in.
+    // Each completed phase has its workers recorded.
+    let scouts = swarm.phases.iter().find(|p| p.name == "literature-scout").unwrap();
+    assert_eq!(scouts.workers.len(), 2);
+    assert!(scouts.workers.iter().all(|w| w.status == "passed"));
+}
+
+#[tokio::test]
+async fn execute_halts_on_worker_escalation() {
+    let tmp = tempdir().unwrap();
+    let research_base = tmp.path().join("research");
+    fs::create_dir_all(&research_base).unwrap();
+
+    // A single final-only turn: every worker call returns EndTurn with no
+    // tool use, so no worker ever writes any artifact. Every worker's gate
+    // misses all three artifacts, retries (still nothing), and escalates.
+    // execute dispatches both scouts before gating the wave, then halts with
+    // Err(Escalated) listing the escalated scout(s).
+    let turns: Vec<Vec<StreamEvent>> = vec![final_turn("nothing written")];
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let orch = Orchestrator::new(
+        OrchestratorConfig {
+            research_base,
+            agents_dir: fixture_agents_dir(),
+            default_model: "fake-model".into(),
+            max_parallel: 1,
+        },
+        provider,
+    );
+    let err = orch
+        .execute(&fixture_spec_path(), &fixture_plan_path(), "rid2")
+        .await
+        .unwrap_err();
+    match err {
+        OrchestratorError::Escalated(names) => {
+            assert!(names.contains(&"literature-scout-1".to_string()),
+                "expected literature-scout-1 in escalated names, got {names:?}");
+        }
+        other => panic!("expected Escalated, got {other:?}"),
+    }
+}
