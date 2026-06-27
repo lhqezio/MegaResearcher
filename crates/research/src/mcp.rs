@@ -10,12 +10,17 @@
 //! - Task 2: the `McpTool` wrapper + `McpToolSet`.
 //! - Task 3: `ml_intern_config`, `mcp_project_dir`, `prewarm`.
 
+use std::collections::HashMap;
+use std::path::Path;
+use std::process::Stdio;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use claurst_core::config::McpServerConfig;
 use claurst_mcp::{expand_server_config, CallToolResult, McpClient, McpTool as ServerMcpTool};
 use serde_json::Value;
+use tokio::process::Command;
+use tokio::time::{timeout, Duration};
 
 use crate::worker_tools::{Tool, ToolResult};
 
@@ -180,19 +185,80 @@ impl McpToolSet {
     }
 }
 
-/// Task 3 placeholder. The production `prewarm` runs `uv sync --project <mcp>`
-/// before `McpClient::connect_stdio`; this no-op stub is overwritten by Task 3
-/// (which lands `ml_intern_config`, `mcp_project_dir`, and the `uv sync` body).
-/// Required so `McpToolSet::connect` compiles in the T2-only state without
-/// breaking the green-bar.
-async fn prewarm(_config: &McpServerConfig) -> Result<(), McpError> {
+/// The uv project dir for an MCP server, derived from `--project` in its
+/// args. Used by `prewarm` to run `uv sync` before connect.
+fn mcp_project_dir(config: &McpServerConfig) -> Option<&str> {
+    let mut iter = config.args.iter();
+    while let Some(a) = iter.next() {
+        if a == "--project" {
+            return iter.next().map(|s| s.as_str());
+        }
+    }
+    None
+}
+
+/// The default ml-intern server config: spawn `mcp/server.py` via
+/// `uv run --project <repo>/mcp`, forwarding `HF_TOKEN`/`GITHUB_TOKEN` from the
+/// process env (resolved at connect), and pointing `ML_INTERN_PATH` at the
+/// vendored library. Mirrors the repo-root `.mcp.json` the v0 plugin uses,
+/// but with absolute paths resolved from `repo_root` (no `${CLAUDE_PLUGIN_ROOT}`).
+pub fn ml_intern_config(repo_root: &Path) -> McpServerConfig {
+    let mcp_dir = repo_root.join("mcp");
+    let server = mcp_dir.join("server.py");
+    let ml_intern_path = repo_root.join("tools").join("ml-intern");
+    let mut env = HashMap::new();
+    env.insert("HF_TOKEN".to_string(), "${HF_TOKEN}".to_string());
+    env.insert("GITHUB_TOKEN".to_string(), "${GITHUB_TOKEN}".to_string());
+    env.insert(
+        "ML_INTERN_PATH".to_string(),
+        ml_intern_path.to_string_lossy().to_string(),
+    );
+    McpServerConfig {
+        name: "ml-intern".to_string(),
+        command: Some("uv".to_string()),
+        args: vec![
+            "run".to_string(),
+            "--project".to_string(),
+            mcp_dir.to_string_lossy().to_string(),
+            "python".to_string(),
+            server.to_string_lossy().to_string(),
+        ],
+        env,
+        url: None,
+        server_type: "stdio".to_string(),
+    }
+}
+
+/// Pre-warm the server's uv venv (`uv sync --project <dir>`) before connecting,
+/// so the first `client.connect` does not pay the (potentially >30s) venv
+/// creation cost and miss the handshake timeout. Idempotent: `uv sync` is a
+/// no-op on an already-synced venv. Times out after 5 minutes.
+pub async fn prewarm(config: &McpServerConfig) -> Result<(), McpError> {
+    let dir = mcp_project_dir(config)
+        .ok_or_else(|| McpError("no --project <dir> in MCP server args".to_string()))?;
+    let output = timeout(
+        Duration::from_secs(300),
+        Command::new("uv")
+            .arg("sync")
+            .arg("--project")
+            .arg(dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output(),
+    )
+    .await
+    .map_err(|_| McpError("uv sync timed out after 300s".to_string()))?
+    .map_err(|e| McpError(format!("failed to spawn uv: {e}")))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(McpError(format!("uv sync failed: {stderr}")));
+    }
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::worker_tools::Tool;
     use claurst_mcp::McpContent;
     use serde_json::json;
     use std::sync::Mutex;
@@ -264,10 +330,6 @@ mod tests {
         assert_eq!(calls[0].0, "hf_papers");
         assert_eq!(calls[0].1, Some(json!({"operation": "trending"})));
     }
-
-    // Silence unused imports until Task 2/3 use them.
-    #[allow(dead_code)]
-    fn _silence(_t: &dyn Tool, _v: Value) {}
 
     use claurst_mcp::McpTool as ServerMcpTool;
 
@@ -378,5 +440,59 @@ mod tests {
         assert_eq!(set.tools()[1].name(), "mcp__ml-intern__web_search");
         assert!(set.tools()[0].is_read_only());
         assert!(set.tools()[0].is_concurrency_safe());
+    }
+
+    fn no_project_config() -> McpServerConfig {
+        McpServerConfig {
+            name: "x".into(),
+            command: Some("uv".into()),
+            args: vec!["run".into(), "python".into()],
+            env: HashMap::new(),
+            url: None,
+            server_type: "stdio".into(),
+        }
+    }
+
+    #[test]
+    fn ml_intern_config_resolves_absolute_paths_and_env_tokens() {
+        let root = Path::new("/repo");
+        let cfg = ml_intern_config(root);
+        assert_eq!(cfg.name, "ml-intern");
+        assert_eq!(cfg.command.as_deref(), Some("uv"));
+        assert_eq!(
+            cfg.args,
+            vec![
+                "run".to_string(),
+                "--project".to_string(),
+                "/repo/mcp".to_string(),
+                "python".to_string(),
+                "/repo/mcp/server.py".to_string(),
+            ]
+        );
+        assert_eq!(cfg.server_type, "stdio");
+        assert_eq!(cfg.url, None);
+        assert_eq!(cfg.env.get("HF_TOKEN").unwrap(), "${HF_TOKEN}");
+        assert_eq!(cfg.env.get("GITHUB_TOKEN").unwrap(), "${GITHUB_TOKEN}");
+        assert_eq!(
+            cfg.env.get("ML_INTERN_PATH").unwrap(),
+            "/repo/tools/ml-intern"
+        );
+    }
+
+    #[test]
+    fn mcp_project_dir_finds_project_arg() {
+        let cfg = ml_intern_config(Path::new("/repo"));
+        assert_eq!(mcp_project_dir(&cfg), Some("/repo/mcp"));
+    }
+
+    #[test]
+    fn mcp_project_dir_returns_none_without_project_arg() {
+        assert_eq!(mcp_project_dir(&no_project_config()), None);
+    }
+
+    #[tokio::test]
+    async fn prewarm_errors_when_no_project_arg() {
+        let err = prewarm(&no_project_config()).await.unwrap_err();
+        assert!(err.0.contains("no --project"), "err was: {}", err.0);
     }
 }
