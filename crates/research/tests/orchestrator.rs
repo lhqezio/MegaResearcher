@@ -927,3 +927,174 @@ fn parse_redteam_verdict_file_reads_disk() {
     let v = megaresearcher_research::orchestrator::verdict::parse_redteam_verdict_file(&p).unwrap();
     assert_eq!(v, Some(RedTeamVerdict::Reject { revision: 1 }));
 }
+
+use megaresearcher_research::orchestrator::gaps::Gap;
+use megaresearcher_research::orchestrator::hypothesis::{
+    build_smith_spec, dispatch_hypothesis_smiths, redispatch_smith_revision, Hypothesis,
+};
+
+fn gap(id: &str, finder: &str, finder_dir: &Path, statement: &str) -> Gap {
+    Gap {
+        id: id.into(),
+        finder_name: finder.into(),
+        finder_dir: finder_dir.to_path_buf(),
+        statement: statement.into(),
+        gap_type: "contradiction".into(),
+    }
+}
+
+#[test]
+fn build_smith_spec_inlines_gap_and_finder_output() {
+    let tmp = tempdir().unwrap();
+    let finder_dir = tmp.path().join("gap-finder-1");
+    fs::create_dir_all(&finder_dir).unwrap();
+    fs::write(finder_dir.join("output.md"), "FINDER OUTPUT BODY").unwrap();
+    let g = gap(
+        "gap-1",
+        "gap-finder-1",
+        &finder_dir,
+        "Technique X never applied to A+B.",
+    );
+    let spec = build_smith_spec(
+        "SPEC TEXT",
+        &g,
+        "hypothesis-smith-1",
+        &tmp.path().join("hypothesis-smith-1"),
+        tmp.path(),
+        None,
+    );
+    assert_eq!(spec.name, "hypothesis-smith-1");
+    assert_eq!(spec.role, "hypothesis-smith");
+    assert!(spec.prompt.contains("SPEC TEXT"));
+    assert!(spec.prompt.contains("Technique X never applied to A+B."));
+    assert!(spec.prompt.contains("FINDER OUTPUT BODY"));
+    assert!(spec.prompt.contains("hypothesis-smith-1"));
+    // No revision prior on initial dispatch.
+    assert!(!spec.prompt.contains("Previous red-team critique"));
+}
+
+#[test]
+fn build_smith_spec_revision_appends_redteam_prior() {
+    let tmp = tempdir().unwrap();
+    let finder_dir = tmp.path().join("gap-finder-1");
+    fs::create_dir_all(&finder_dir).unwrap();
+    fs::write(finder_dir.join("output.md"), "FINDER BODY").unwrap();
+    let g = gap("gap-1", "gap-finder-1", &finder_dir, "The gap statement.");
+    let spec = build_smith_spec(
+        "SPEC",
+        &g,
+        "hypothesis-smith-2",
+        &tmp.path().join("hypothesis-smith-2"),
+        tmp.path(),
+        Some("RED-TEAM CRITIQUE BODY"),
+    );
+    assert!(spec.prompt.contains("Previous red-team critique"));
+    assert!(spec.prompt.contains("RED-TEAM CRITIQUE BODY"));
+}
+
+#[tokio::test]
+async fn dispatch_hypothesis_smiths_one_per_gap_and_gates() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("run");
+    let finder_dir = run_dir.join("gap-finder-1");
+    fs::create_dir_all(&finder_dir).unwrap();
+    fs::write(finder_dir.join("output.md"), "FINDER BODY").unwrap();
+    let gaps = vec![
+        gap("gap-1", "gap-finder-1", &finder_dir, "Gap one statement."),
+        gap("gap-2", "gap-finder-1", &finder_dir, "Gap two statement."),
+    ];
+    // 2 smiths x 4 scripted turns = 8 turns.
+    let fake = Arc::new(FakeProvider::new("fake", run_turns(2)));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let hyps = dispatch_hypothesis_smiths(
+        &run_dir,
+        "SPEC",
+        &gaps,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+    )
+    .await
+    .unwrap();
+    assert_eq!(hyps.len(), 2);
+    assert_eq!(hyps[0].name, "hypothesis-smith-1");
+    assert_eq!(hyps[1].name, "hypothesis-smith-2");
+    // Each smith wrote all three artifacts.
+    for h in &hyps {
+        assert!(h.dir.join("output.md").exists());
+        assert!(h.dir.join("manifest.yaml").exists());
+        assert!(h.dir.join("verification.md").exists());
+    }
+    assert_eq!(fake.call_count(), 8);
+}
+
+#[tokio::test]
+async fn dispatch_hypothesis_smiths_halts_on_gate_escalation() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("run");
+    let finder_dir = run_dir.join("gap-finder-1");
+    fs::create_dir_all(&finder_dir).unwrap();
+    fs::write(finder_dir.join("output.md"), "FINDER BODY").unwrap();
+    let gaps = vec![gap("gap-1", "gap-finder-1", &finder_dir, "Gap one.")];
+    // A single final-only turn: the smith writes nothing, the gate retries, the
+    // retry also writes nothing (.or_else(last) re-emits the same empty turn),
+    // so the smith escalates.
+    let turns: Vec<Vec<StreamEvent>> = vec![final_turn("nothing written")];
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let err = dispatch_hypothesis_smiths(
+        &run_dir,
+        "SPEC",
+        &gaps,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+    )
+    .await
+    .expect_err("should escalate");
+    match err {
+        OrchestratorError::Escalated(names) => {
+            assert_eq!(names, vec!["hypothesis-smith-1".to_string()])
+        }
+        other => panic!("expected Escalated, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn redispatch_smith_revision_overwrites_output_and_gates() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("run");
+    let finder_dir = run_dir.join("gap-finder-1");
+    fs::create_dir_all(&finder_dir).unwrap();
+    fs::write(finder_dir.join("output.md"), "FINDER BODY").unwrap();
+    let g = gap("gap-1", "gap-finder-1", &finder_dir, "The gap.");
+    let hyp = Hypothesis {
+        name: "hypothesis-smith-1".into(),
+        dir: run_dir.join("hypothesis-smith-1"),
+        gap: g,
+    };
+    fs::create_dir_all(&hyp.dir).unwrap();
+    fs::write(hyp.dir.join("output.md"), "OLD INITIAL HYPOTHESIS").unwrap();
+    // 4 turns for the revision dispatch.
+    let fake = Arc::new(FakeProvider::new("fake", run_turns(1)));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    redispatch_smith_revision(
+        &hyp,
+        "SPEC",
+        "RED-TEAM CRITIQUE",
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+    )
+    .await
+    .unwrap();
+    // The revised output overwrote the old one (the fake writes "# Output\n\ncontent").
+    assert_ne!(
+        fs::read_to_string(hyp.dir.join("output.md")).unwrap(),
+        "OLD INITIAL HYPOTHESIS"
+    );
+    assert!(hyp.dir.join("manifest.yaml").exists());
+    assert_eq!(fake.call_count(), 4);
+}

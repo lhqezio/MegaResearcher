@@ -7,6 +7,7 @@ pub mod dispatch;
 pub mod dispatch_plan;
 pub mod gaps;
 pub mod gate;
+pub mod hypothesis;
 pub mod preflight;
 pub mod synthesize;
 pub mod verdict;
