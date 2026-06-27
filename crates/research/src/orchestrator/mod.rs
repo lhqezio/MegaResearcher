@@ -2,6 +2,7 @@
 //! through the six phases, runs the verification gate, assembles
 //! consolidations, and finalizes the run. See the design spec §4/§10/§11.
 
+pub mod consolidate;
 pub mod dispatch;
 pub mod dispatch_plan;
 pub mod gate;

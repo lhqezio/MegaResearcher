@@ -364,3 +364,54 @@ async fn gate_escalates_when_retry_still_missing() {
 fn required_artifacts_constant() {
     assert_eq!(REQUIRED_ARTIFACTS, &["output.md", "manifest.yaml", "verification.md"]);
 }
+
+use megaresearcher_research::orchestrator::consolidate::{consolidate_bibliography, consolidate_gaps};
+
+#[test]
+fn consolidate_bibliography_assembles_scout_outputs_in_order() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("runs/rid");
+    let s1 = run_dir.join("literature-scout-1");
+    let s2 = run_dir.join("literature-scout-2");
+    fs::create_dir_all(&s1).unwrap();
+    fs::create_dir_all(&s2).unwrap();
+    fs::write(s1.join("output.md"), "BIB A").unwrap();
+    fs::write(s2.join("output.md"), "BIB B").unwrap();
+
+    let out = consolidate_bibliography(&run_dir, &[s1.clone(), s2.clone()]).unwrap();
+    assert_eq!(out, run_dir.join("bibliography.md"));
+    let text = fs::read_to_string(&out).unwrap();
+    assert!(text.starts_with("# Consolidated bibliography"));
+    let a = text.find("## literature-scout-1").unwrap();
+    let b = text.find("## literature-scout-2").unwrap();
+    assert!(a < b);
+    assert!(text.contains("BIB A"));
+    assert!(text.contains("BIB B"));
+}
+
+#[test]
+fn consolidate_gaps_writes_gaps_md() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("runs/rid");
+    let g = run_dir.join("gap-finder-1");
+    fs::create_dir_all(&g).unwrap();
+    fs::write(g.join("output.md"), "GAP LIST").unwrap();
+    let out = consolidate_gaps(&run_dir, &[g]).unwrap();
+    assert_eq!(out, run_dir.join("gaps.md"));
+    let text = fs::read_to_string(&out).unwrap();
+    assert!(text.starts_with("# Consolidated gaps"));
+    assert!(text.contains("## gap-finder-1"));
+    assert!(text.contains("GAP LIST"));
+}
+
+#[test]
+fn consolidate_handles_missing_output_md() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("runs/rid");
+    let s = run_dir.join("literature-scout-1");
+    fs::create_dir_all(&s).unwrap();
+    // No output.md in the scout dir.
+    let out = consolidate_bibliography(&run_dir, &[s]).unwrap();
+    let text = fs::read_to_string(&out).unwrap();
+    assert!(text.contains("(no output.md)"));
+}
