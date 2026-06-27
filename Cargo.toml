@@ -10,6 +10,7 @@ members = [
     "crates/mcp",
     "crates/plugins",
     "crates/cli",
+    "crates/mr-cli",
     "crates/research",
 ]
 

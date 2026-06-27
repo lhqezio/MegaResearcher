@@ -2551,6 +2551,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "mr-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "clap",
+ "claurst-api",
+ "claurst-core",
+ "megaresearcher-research",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
