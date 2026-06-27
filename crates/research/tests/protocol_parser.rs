@@ -35,7 +35,7 @@ fn test_parse_metric() {
 #[test]
 fn test_parse_decision_rule() {
     let result = parse_protocol(&fixtures().join("specs_protocol.md")).unwrap();
-    assert!(result.decision_rules.len() >= 1);
+    assert!(!result.decision_rules.is_empty());
     assert!(result.decision_rules[0].raw.contains("0.05"));
 }
 

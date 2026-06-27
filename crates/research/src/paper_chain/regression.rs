@@ -58,9 +58,7 @@ fn weakness_lines(text: &str) -> Vec<String> {
 fn tag(line: &str) -> String {
     // Python: `line.lstrip("- ").strip()` then `split(":", 1)[0]`.
     // lstrip("- ") strips leading characters in the set {'-', ' '}.
-    let body = line
-        .trim_start_matches(|c: char| c == '-' || c == ' ')
-        .trim();
+    let body = line.trim_start_matches(['-', ' ']).trim();
     body.split(':').next().unwrap_or("").to_string()
 }
 

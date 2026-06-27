@@ -15,7 +15,7 @@ pub fn run_id_from_parts(stamp: &str, hex6: &str) -> String {
 pub fn generate_run_id() -> io::Result<String> {
     let stamp = Utc::now().format("%Y-%m-%d-%H%M").to_string();
     let mut buf = [0u8; 3];
-    getrandom::getrandom(&mut buf).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    getrandom::getrandom(&mut buf).map_err(io::Error::other)?;
     let hex6 = format!("{:02x}{:02x}{:02x}", buf[0], buf[1], buf[2]);
     Ok(run_id_from_parts(&stamp, &hex6))
 }

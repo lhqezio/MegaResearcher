@@ -1,7 +1,6 @@
 //! 1:1 port of tests/test_finalize.py.
 
 use std::fs;
-use std::path::PathBuf;
 
 use megaresearcher_research::paper_chain::finalize::finalize_paper;
 
