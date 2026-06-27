@@ -3,7 +3,7 @@
 //! Spec §10.2: before a run, verify the inputs are present and writable.
 //! Phase 4a does structural checks only (spec/plan exist, agent files
 //! present, runs dir createable). Provider-key reachability and ml-intern
-//! reachability are deferred to Phase 5 (real runs) — they have no meaning
+//! reachability are deferred to Phase 5 (live runs) — they have no meaning
 //! against a fake provider.
 
 use std::fs;

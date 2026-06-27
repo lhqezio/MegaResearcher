@@ -47,7 +47,7 @@ The runtime pieces (`preflight`, `dispatch`, `gate`, `consolidate`, `synthesize`
 | Dispatch counts from plan prose | `parse_plan` extracts scout/gap-finder assignments by `##`/`###` headings → fixed `Vec<Assignment>` |
 | Mid-run "one smith per gap" | Out of scope for 4a (gap-finding skips 3/4/5); deferred to 4b via gap-finder manifests |
 | Consolidation as LLM synthesis | `consolidate_bibliography`/`consolidate_gaps` are file assemblers (header + each worker's `output.md`) |
-| `gaps.md` absent in real runs | 4a always writes `gaps.md` (deterministic; the synthesist inlines it) |
+| `gaps.md` absent in live runs | 4a always writes `gaps.md` (deterministic; the synthesist inlines it) |
 | `run_id` non-determinism | Orchestrator takes `run_id: &str` from caller |
 | Provider per-worker scripting | Shared `Arc<dyn LlmProvider>`; tests script a flat turn list with `max_parallel = 1` |
 | Orchestrator pre-flight (§10.2) | Structural only: spec/plan exist, agent files present, `runs/` createable; provider-key + ml-intern deferred to Phase 5 |
@@ -616,7 +616,7 @@ pub mod preflight;
 //! Spec §10.2: before a run, verify the inputs are present and writable.
 //! Phase 4a does structural checks only (spec/plan exist, agent files
 //! present, runs dir createable). Provider-key reachability and ml-intern
-//! reachability are deferred to Phase 5 (real runs) — they have no meaning
+//! reachability are deferred to Phase 5 (live runs) — they have no meaning
 //! against a fake provider.
 
 use std::fs;
