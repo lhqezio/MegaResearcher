@@ -261,7 +261,6 @@ pub struct ContextCommand;
 pub struct CopyCommand;
 pub struct ChromeCommand;
 pub struct VimCommand;
-pub struct VoiceCommand;
 pub struct UpgradeCommand;
 pub struct ReleaseNotesCommand;
 pub struct RateLimitOptionsCommand;
@@ -495,9 +494,9 @@ fn command_category(name: &str) -> &'static str {
         "clear" | "compact" | "rewind" | "summary" | "export" | "rename" | "branch" | "fork" => {
             "Conversation"
         }
-        "model" | "config" | "theme" | "color" | "vim" | "fast" | "effort" | "voice"
-        | "statusline" | "output-style" | "keybindings" | "privacy-settings"
-        | "rate-limit-options" | "sandbox-toggle" => "Settings",
+        "model" | "config" | "theme" | "color" | "vim" | "fast" | "effort" | "statusline"
+        | "output-style" | "keybindings" | "privacy-settings" | "rate-limit-options"
+        | "sandbox-toggle" => "Settings",
         "cost" | "stats" | "usage" | "extra-usage" | "context" | "ctx-viz" => "Usage & Cost",
         "status" | "doctor" | "terminal-setup" | "version" | "update" | "upgrade"
         | "release-notes" => "System",
@@ -5433,8 +5432,6 @@ struct UiSettings {
     #[serde(default)]
     pub fast_mode: Option<bool>,
     #[serde(default)]
-    pub voice_enabled: Option<bool>,
-    #[serde(default)]
     pub statusline_show_cost: Option<bool>,
     #[serde(default)]
     pub statusline_show_tokens: Option<bool>,
@@ -6287,101 +6284,6 @@ impl SlashCommand for VimCommand {
                 }
             )),
             Err(e) => CommandResult::Error(format!("Failed to save setting: {}", e)),
-        }
-    }
-}
-
-// ---- /voice --------------------------------------------------------------
-
-#[async_trait]
-impl SlashCommand for VoiceCommand {
-    fn name(&self) -> &str {
-        "voice"
-    }
-    fn description(&self) -> &str {
-        "Toggle voice input mode on/off"
-    }
-    fn help(&self) -> &str {
-        "Usage: /voice [on|off|status]\n\n\
-         Enables or disables voice input (push-to-talk).\n\
-         Setting is persisted to ~/.claurst/ui-settings.json.\n\n\
-         Transcription is performed via a Whisper-compatible API.\n\
-         Set one of these env vars for the API key:\n\
-           OPENAI_API_KEY   — OpenAI Whisper (default endpoint)\n\
-           ANTHROPIC_API_KEY — used as a fallback key\n\n\
-         To use a local Whisper server instead of OpenAI:\n\
-           export WHISPER_ENDPOINT_URL=http://localhost:8080/v1/audio/transcriptions\n\
-           export OPENAI_API_KEY=any-value  (local servers often ignore the key)\n\n\
-         On Linux, ALSA must be set up: sudo apt install libasound2-dev\n\
-         Check available devices with: arecord -l\n\n\
-         Controls:\n\
-           Alt+V — start recording; Alt+V or Esc — stop and transcribe"
-    }
-
-    async fn execute(&self, args: &str, _ctx: &mut CommandContext) -> CommandResult {
-        let current = load_ui_settings();
-        let currently_enabled = current.voice_enabled.unwrap_or(false);
-
-        let enable = match args.trim() {
-            "on" | "enable" | "enabled" | "true" | "1" => true,
-            "off" | "disable" | "disabled" | "false" | "0" => false,
-            "" => !currently_enabled, // toggle
-            "status" => {
-                let state = if currently_enabled {
-                    "enabled"
-                } else {
-                    "disabled"
-                };
-                let endpoint = std::env::var("WHISPER_ENDPOINT_URL").unwrap_or_else(|_| {
-                    "https://api.openai.com/v1/audio/transcriptions (default)".to_string()
-                });
-                let key_source = if std::env::var("OPENAI_API_KEY").is_ok() {
-                    "OPENAI_API_KEY"
-                } else if std::env::var("ANTHROPIC_API_KEY").is_ok() {
-                    "ANTHROPIC_API_KEY"
-                } else {
-                    "(none — transcription will fail)"
-                };
-                return CommandResult::Message(format!(
-                    "Voice mode: {}\n\
-                     Endpoint:   {}\n\
-                     API key:    {}",
-                    state, endpoint, key_source
-                ));
-            }
-            other => {
-                return CommandResult::Error(format!(
-                    "Unknown argument '{}'. Use: /voice [on|off|status]",
-                    other
-                ))
-            }
-        };
-
-        match mutate_ui_settings(|s| s.voice_enabled = Some(enable)) {
-            Ok(_) => {
-                if enable {
-                    let endpoint = std::env::var("WHISPER_ENDPOINT_URL")
-                        .unwrap_or_else(|_| "OpenAI Whisper (default)".to_string());
-                    let key_hint = if std::env::var("OPENAI_API_KEY").is_ok()
-                        || std::env::var("ANTHROPIC_API_KEY").is_ok()
-                    {
-                        String::new()
-                    } else {
-                        "\nWarning: no OPENAI_API_KEY found — transcription will fail. \
-                         Set OPENAI_API_KEY or WHISPER_ENDPOINT_URL for a local server."
-                            .to_string()
-                    };
-                    CommandResult::Message(format!(
-                        "Voice recording activated.\n\
-                         Press Alt+V to start recording; Alt+V or Esc to stop and transcribe.\n\
-                         Endpoint: {}{}",
-                        endpoint, key_hint
-                    ))
-                } else {
-                    CommandResult::Message("Voice recording deactivated.".to_string())
-                }
-            }
-            Err(e) => CommandResult::Error(format!("Failed to save voice setting: {}", e)),
         }
     }
 }
@@ -9478,7 +9380,6 @@ pub fn all_commands() -> Vec<Box<dyn SlashCommand>> {
         Box::new(CopyCommand),
         Box::new(ChromeCommand),
         Box::new(VimCommand),
-        Box::new(VoiceCommand),
         Box::new(UpgradeCommand),
         Box::new(ReleaseNotesCommand),
         Box::new(RateLimitOptionsCommand),
