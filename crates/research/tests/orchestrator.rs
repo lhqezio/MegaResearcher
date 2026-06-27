@@ -563,6 +563,7 @@ async fn execute_phases_1_and_2_for_gap_finding() {
             default_model: "fake-model".into(),
             max_parallel: 1,
             mcp: None,
+            escalation: None,
         },
         provider,
     );
@@ -630,6 +631,7 @@ async fn execute_halts_on_worker_escalation() {
             default_model: "fake-model".into(),
             max_parallel: 1,
             mcp: None,
+            escalation: None,
         },
         provider,
     );
@@ -734,6 +736,7 @@ async fn full_gap_finding_integration_test() {
             default_model: "fake-model".into(),
             max_parallel: 1,
             mcp: None,
+            escalation: None,
         },
         provider,
     );
@@ -1538,6 +1541,7 @@ async fn execute_runs_full_hypothesis_path_minimal() {
             default_model: "fake-model".into(),
             max_parallel: 1,
             mcp: None,
+            escalation: None,
         },
         provider,
     );
@@ -1623,6 +1627,7 @@ async fn full_hypothesis_integration_test_with_revision_loop() {
             default_model: "fake-model".into(),
             max_parallel: 1,
             mcp: None,
+            escalation: None,
         },
         provider,
     );
@@ -1695,6 +1700,7 @@ async fn full_hypothesis_integration_test_kill_halts_run() {
             default_model: "fake-model".into(),
             max_parallel: 1,
             mcp: None,
+            escalation: None,
         },
         provider,
     );

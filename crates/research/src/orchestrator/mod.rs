@@ -5,6 +5,7 @@
 pub mod consolidate;
 pub mod dispatch;
 pub mod dispatch_plan;
+pub mod escalation;
 pub mod evaldesign;
 pub mod gaps;
 pub mod gate;
@@ -80,13 +81,14 @@ impl From<WorkerError> for OrchestratorError {
 /// are, the model to resolve "inherit" to, the wave concurrency bound, and an
 /// optional MCP server (ml-intern) to connect in pre-flight. When `mcp` is
 /// `None`, workers get only the jailed Read/Write tools (fake-provider tests).
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct OrchestratorConfig {
     pub research_base: PathBuf,
     pub agents_dir: PathBuf,
     pub default_model: String,
     pub max_parallel: u32,
     pub mcp: Option<McpServerConfig>,
+    pub escalation: Option<Arc<dyn escalation::EscalationHandler>>,
 }
 
 /// The orchestrator: config + a shared provider.
@@ -203,8 +205,15 @@ impl Orchestrator {
             for name in &escalated {
                 add_escalation(&mut swarm, name, "missing artifacts after retry", 1);
             }
-            write_swarm(&swarm, &run_dir)?;
-            return Err(OrchestratorError::Escalated(escalated));
+            return self
+                .adjudicate_escalation(
+                    &swarm,
+                    &run_dir,
+                    run_id,
+                    escalated,
+                    "missing artifacts after retry",
+                )
+                .await;
         }
         consolidate_bibliography(&run_dir, &scout_dirs)?;
         write_swarm(&swarm, &run_dir)?;
@@ -266,8 +275,15 @@ impl Orchestrator {
             for name in &gap_escalated {
                 add_escalation(&mut swarm, name, "missing artifacts after retry", 1);
             }
-            write_swarm(&swarm, &run_dir)?;
-            return Err(OrchestratorError::Escalated(gap_escalated));
+            return self
+                .adjudicate_escalation(
+                    &swarm,
+                    &run_dir,
+                    run_id,
+                    gap_escalated,
+                    "missing artifacts after retry",
+                )
+                .await;
         }
         consolidate_gaps(&run_dir, &gap_dirs)?;
         write_swarm(&swarm, &run_dir)?;
@@ -324,7 +340,15 @@ impl Orchestrator {
                 write_swarm(&swarm, &run_dir)?;
                 if rt.survivors.is_empty() {
                     let killed = rt.killed.clone();
-                    return Err(OrchestratorError::Escalated(killed));
+                    return self
+                        .adjudicate_escalation(
+                            &swarm,
+                            &run_dir,
+                            run_id,
+                            killed,
+                            "all hypotheses killed by red-team",
+                        )
+                        .await;
                 }
 
                 // Phase 5 — eval-designer (one per survivor).
@@ -387,8 +411,15 @@ impl Orchestrator {
         );
         if synth_gates[0].status == GateStatus::Escalated {
             add_escalation(&mut swarm, "synthesist", "missing artifacts after retry", 1);
-            write_swarm(&swarm, &run_dir)?;
-            return Err(OrchestratorError::Escalated(vec!["synthesist".to_string()]));
+            return self
+                .adjudicate_escalation(
+                    &swarm,
+                    &run_dir,
+                    run_id,
+                    vec!["synthesist".to_string()],
+                    "missing artifacts after retry",
+                )
+                .await;
         }
         finalize_run(&run_dir, spec_path, &self.config.research_base)?;
         write_swarm(&swarm, &run_dir)?;
@@ -403,6 +434,46 @@ impl Orchestrator {
                 .collect(),
             escalations: swarm.escalations.iter().map(|e| e.worker.clone()).collect(),
         })
+    }
+
+    /// Adjudicate an escalation: write the swarm state once, then ask the
+    /// configured handler whether to continue (record + return a partial
+    /// `RunOutcome`) or fail (`Err(Escalated)`). When `config.escalation` is
+    /// `None`, verdict is `Fail` — byte-identical to the pre-Phase-6a behavior
+    /// the 52 orchestrator tests depend on.
+    async fn adjudicate_escalation(
+        &self,
+        swarm: &crate::state::swarm_state::SwarmState,
+        run_dir: &Path,
+        run_id: &str,
+        names: Vec<String>,
+        reason: &str,
+    ) -> Result<RunOutcome, OrchestratorError> {
+        write_swarm(swarm, run_dir)?;
+        let verdict = match self.config.escalation.as_ref() {
+            None => escalation::EscalationVerdict::Fail,
+            Some(h) => {
+                h.adjudicate(&crate::state::swarm_state::Escalation {
+                    worker: names.join(","),
+                    reason: reason.to_string(),
+                    retry_count: 1,
+                })
+                .await
+            }
+        };
+        match verdict {
+            escalation::EscalationVerdict::Fail => Err(OrchestratorError::Escalated(names)),
+            escalation::EscalationVerdict::Continue => Ok(RunOutcome {
+                run_dir: run_dir.to_path_buf(),
+                run_id: run_id.to_string(),
+                phase_statuses: swarm
+                    .phases
+                    .iter()
+                    .map(|p| (p.name.clone(), p.status.clone()))
+                    .collect(),
+                escalations: swarm.escalations.iter().map(|e| e.worker.clone()).collect(),
+            }),
+        }
     }
 }
 
