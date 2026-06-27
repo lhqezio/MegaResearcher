@@ -7,6 +7,7 @@ pub mod dispatch;
 pub mod dispatch_plan;
 pub mod gate;
 pub mod preflight;
+pub mod synthesize;
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -21,6 +22,7 @@ use crate::orchestrator::gate::{verify_wave, GateStatus};
 use crate::orchestrator::preflight::{
     add_escalation, build_initial_swarm_state, preflight_check, set_phase, write_swarm,
 };
+use crate::orchestrator::synthesize::{finalize_run, run_synthesist};
 use crate::state::run_tree::create_run_tree;
 use crate::worker::WorkerError;
 
@@ -222,6 +224,44 @@ impl Orchestrator {
         consolidate_gaps(&run_dir, &gap_dirs)?;
         write_swarm(&swarm, &run_dir)?;
 
+        // Phase 6 — synthesist (gap-finding skips 3/4/5, already marked skipped).
+        set_phase(&mut swarm, "synthesist", "running", vec![]);
+        write_swarm(&swarm, &run_dir)?;
+        let (synth_spec, synth_outcome) = run_synthesist(
+            &run_dir,
+            &spec_text,
+            &plan_text,
+            &scout_dirs,
+            &gap_dirs,
+            &self.config.agents_dir,
+            self.provider.clone(),
+            &self.config.default_model,
+            self.config.max_parallel,
+        )
+        .await?;
+        let synth_gates = verify_wave(
+            vec![("synthesist".to_string(), synth_outcome)],
+            std::slice::from_ref(&synth_spec),
+            &self.config.agents_dir,
+            self.provider.clone(),
+            &self.config.default_model,
+        )
+        .await?;
+        let synth_status = gate_status_str(synth_gates[0].status);
+        set_phase(
+            &mut swarm,
+            "synthesist",
+            "complete",
+            vec![("synthesist".to_string(), synth_status.clone())],
+        );
+        if synth_gates[0].status == GateStatus::Escalated {
+            add_escalation(&mut swarm, "synthesist", "missing artifacts after retry", 1);
+            write_swarm(&swarm, &run_dir)?;
+            return Err(OrchestratorError::Escalated(vec!["synthesist".to_string()]));
+        }
+        finalize_run(&run_dir, spec_path, &self.config.research_base)?;
+        write_swarm(&swarm, &run_dir)?;
+
         Ok(RunOutcome {
             run_dir,
             run_id: run_id.to_string(),
@@ -230,7 +270,11 @@ impl Orchestrator {
                 .iter()
                 .map(|p| (p.name.clone(), p.status.clone()))
                 .collect(),
-            escalations: Vec::new(),
+            escalations: swarm
+                .escalations
+                .iter()
+                .map(|e| e.worker.clone())
+                .collect(),
         })
     }
 }

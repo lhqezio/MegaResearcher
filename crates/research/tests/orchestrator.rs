@@ -445,8 +445,8 @@ async fn execute_phases_1_and_2_for_gap_finding() {
     let agents = fixture_agents_dir();
     fs::create_dir_all(&research_base).unwrap();
 
-    // 3 workers: 2 scouts + 1 gap-finder. 3 × 4 = 12 scripted turns.
-    let fake = Arc::new(FakeProvider::new("fake", run_turns(3)));
+    // 4 workers: 2 scouts + 1 gap-finder + 1 synthesist. 4 × 4 = 16 turns.
+    let fake = Arc::new(FakeProvider::new("fake", run_turns(4)));
     let provider = fake.clone() as Arc<dyn LlmProvider>;
     let orch = Orchestrator::new(
         OrchestratorConfig {
@@ -485,7 +485,7 @@ async fn execute_phases_1_and_2_for_gap_finding() {
     assert_eq!(by_name["hypothesis-smith"], "skipped");
     assert_eq!(by_name["red-team"], "skipped");
     assert_eq!(by_name["eval-designer"], "skipped");
-    assert_eq!(by_name["synthesist"], "pending"); // Task 7 fills this in.
+    assert_eq!(by_name["synthesist"], "complete"); // Task 7 fills this in.
     // Each completed phase has its workers recorded.
     let scouts = swarm.phases.iter().find(|p| p.name == "literature-scout").unwrap();
     assert_eq!(scouts.workers.len(), 2);
@@ -526,4 +526,119 @@ async fn execute_halts_on_worker_escalation() {
         }
         other => panic!("expected Escalated, got {other:?}"),
     }
+}
+
+use megaresearcher_research::orchestrator::synthesize::{finalize_run, run_synthesist};
+
+#[tokio::test]
+async fn run_synthesist_inlines_all_outputs_and_writes_artifacts() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("runs/rid");
+    let synth_dir = run_dir.join("synthesist");
+    let s1 = run_dir.join("literature-scout-1");
+    let g1 = run_dir.join("gap-finder-1");
+    fs::create_dir_all(&s1).unwrap();
+    fs::create_dir_all(&g1).unwrap();
+    fs::write(s1.join("output.md"), "SCOUT1").unwrap();
+    fs::write(g1.join("output.md"), "GAP1").unwrap();
+
+    let fake = Arc::new(FakeProvider::new("fake", three_artifact_turns()));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let (spec, outcome) = run_synthesist(
+        &run_dir, "SPEC", "PLAN", &[s1], &[g1], &fixture_agents_dir(), provider, "fake-model", 1,
+    )
+    .await
+    .unwrap();
+    assert_eq!(spec.name, "synthesist");
+    assert!(synth_dir.join("output.md").exists());
+    assert!(synth_dir.join("manifest.yaml").exists());
+    assert!(synth_dir.join("verification.md").exists());
+    assert_eq!(outcome.stop, WorkerStop::EndTurn);
+    // The prompt inlined the scout + gap-finder outputs.
+    assert!(spec.prompt.contains("SCOUT1"));
+    assert!(spec.prompt.contains("GAP1"));
+    assert!(spec.prompt.contains("SPEC"));
+    assert!(spec.prompt.contains("PLAN"));
+}
+
+#[test]
+fn finalize_run_copies_output_and_creates_symlink() {
+    let tmp = tempdir().unwrap();
+    let research_base = tmp.path().join("research");
+    let run_dir = research_base.join("runs/2026-06-27-0315-a1b2c3");
+    let synth = run_dir.join("synthesist");
+    fs::create_dir_all(&synth).unwrap();
+    fs::write(synth.join("output.md"), "FINAL OUTPUT").unwrap();
+    let spec_path = research_base.join("specs/my-spec.md");
+    fs::create_dir_all(spec_path.parent().unwrap()).unwrap();
+    fs::write(&spec_path, "spec body").unwrap();
+
+    let link = finalize_run(&run_dir, &spec_path, &research_base).unwrap();
+    assert_eq!(link, research_base.join("specs/my-spec-latest.md"));
+    // Run-root output.md is the copy of synthesist/output.md.
+    assert_eq!(fs::read_to_string(run_dir.join("output.md")).unwrap(), "FINAL OUTPUT");
+    // Symlink resolves to the run-root output.md.
+    assert_eq!(fs::read_to_string(&link).unwrap(), "FINAL OUTPUT");
+    // Re-running replaces the existing symlink (no error).
+    finalize_run(&run_dir, &spec_path, &research_base).unwrap();
+    assert_eq!(fs::read_to_string(&link).unwrap(), "FINAL OUTPUT");
+}
+
+#[tokio::test]
+async fn full_gap_finding_integration_test() {
+    let tmp = tempdir().unwrap();
+    let research_base = tmp.path().join("research");
+    fs::create_dir_all(&research_base).unwrap();
+    // 4 workers (2 scouts, 1 gap-finder, 1 synthesist) × 4 turns = 16 turns.
+    let fake = Arc::new(FakeProvider::new("fake", run_turns(4)));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let orch = Orchestrator::new(
+        OrchestratorConfig {
+            research_base: research_base.clone(),
+            agents_dir: fixture_agents_dir(),
+            default_model: "fake-model".into(),
+            max_parallel: 1,
+        },
+        provider,
+    );
+    // Put the spec inside research_base/specs/ so finalize_run's symlink lands
+    // next to it, mirroring the real layout.
+    let spec_path = research_base.join("specs/gap-finding-spec.md");
+    fs::create_dir_all(spec_path.parent().unwrap()).unwrap();
+    fs::copy(fixture_spec_path(), &spec_path).unwrap();
+
+    let out = orch.execute(&spec_path, &fixture_plan_path(), "2026-06-27-0315-a1b2c3").await.unwrap();
+    let run_dir = out.run_dir.clone();
+
+    // Full run tree.
+    assert!(run_dir.join("swarm-state.yaml").exists());
+    assert!(run_dir.join("literature-scout-1/output.md").exists());
+    assert!(run_dir.join("literature-scout-2/output.md").exists());
+    assert!(run_dir.join("gap-finder-1/output.md").exists());
+    assert!(run_dir.join("synthesist/output.md").exists());
+    assert!(run_dir.join("bibliography.md").exists());
+    assert!(run_dir.join("gaps.md").exists());
+    // Run-root output.md + spec-latest symlink.
+    assert!(run_dir.join("output.md").exists());
+    let link = research_base.join("specs/gap-finding-spec-latest.md");
+    assert!(link.exists());
+    assert_eq!(
+        fs::read_to_string(&link).unwrap(),
+        fs::read_to_string(run_dir.join("output.md")).unwrap()
+    );
+
+    // Swarm-state: all six phases accounted for.
+    let swarm = SwarmState::read(&run_dir.join("swarm-state.yaml")).unwrap();
+    let by_name: std::collections::HashMap<&str, &str> = swarm
+        .phases
+        .iter()
+        .map(|p| (p.name.as_str(), p.status.as_str()))
+        .collect();
+    assert_eq!(by_name["literature-scout"], "complete");
+    assert_eq!(by_name["gap-finder"], "complete");
+    assert_eq!(by_name["hypothesis-smith"], "skipped");
+    assert_eq!(by_name["red-team"], "skipped");
+    assert_eq!(by_name["eval-designer"], "skipped");
+    assert_eq!(by_name["synthesist"], "complete");
+    assert!(out.escalations.is_empty());
 }
