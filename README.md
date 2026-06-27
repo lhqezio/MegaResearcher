@@ -1,3 +1,9 @@
+> **v1 in progress.** MegaResearcher is being rebuilt as a standalone Rust
+> research agent (GPL-3.0), forked from claurst, with the swarm orchestrator
+> reimplemented as deterministic Rust. Design: `docs/superpowers/specs/2026-06-26-megaresearcher-rs-design.md`.
+> The Claude Code plugin below is the v0 prototype, kept as the port reference
+> and removed once the Rust harness reaches feature parity.
+
 # MegaResearcher
 
 A Claude Code plugin that runs a small group of research subagents against a research question and produces a research direction document: hypotheses, falsification criteria, experimental designs, and a record of the ideas that were rejected along the way.
