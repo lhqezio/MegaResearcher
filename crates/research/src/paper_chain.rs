@@ -2,6 +2,7 @@
 //! Submodules are declared by Tasks 2–7 as they are ported.
 
 pub mod finalize;
+pub mod preflight;
 pub mod protocol_parser;
 pub mod regression;
 pub mod scaffold;
