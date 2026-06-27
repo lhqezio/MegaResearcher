@@ -2468,6 +2468,7 @@ dependencies = [
  "chrono",
  "claurst-api",
  "claurst-core",
+ "claurst-mcp",
  "futures",
  "getrandom 0.2.17",
  "once_cell",

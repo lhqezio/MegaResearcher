@@ -256,3 +256,4 @@ Each phase is a mergeable, testable increment:
 - `max_turns` default per worker role (CC uses 200 for forks; research workers may want less).
 - Whether the HTML export is generated on-demand or also written to the run dir.
 - Vercel Sandbox Rust HTTP client: hand-rolled vs. an existing SDK crate.
+
