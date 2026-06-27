@@ -1531,3 +1531,139 @@ async fn execute_runs_full_hypothesis_path_minimal() {
     assert!(run_dir.join("red-team-1-r1").join("output.md").exists());
     assert!(run_dir.join("eval-designer-1").join("output.md").exists());
 }
+
+#[tokio::test]
+async fn full_hypothesis_integration_test_with_revision_loop() {
+    let tmp = tempdir().unwrap();
+    let research_base = tmp.path().join("research");
+    fs::create_dir_all(&research_base).unwrap();
+    let spec_path = research_base.join("specs/hypothesis-spec.md");
+    fs::create_dir_all(spec_path.parent().unwrap()).unwrap();
+    fs::copy(fixture_hypothesis_spec_path(), &spec_path).unwrap();
+
+    // 1 scout + 1 gap-finder(2 gaps) + 2 smiths (Phase 3 wave) +
+    // red-team-1-r1 APPROVE + red-team-2-r1 REJECT + smith-2 revision +
+    // red-team-2-r2 APPROVE + 2 eval-designers + synthesist.
+    //
+    // Turn sequence (max_parallel=1, deterministic call order):
+    //  1 scout-1            (4)
+    //  2 gap-finder-1       (4) — manifest with 2 gaps
+    //  3 hypothesis-smith-1  (4)
+    //  4 hypothesis-smith-2 (4)   [Phase 3: both smiths in one wave]
+    //  5 red-team-1-r1      (4) — APPROVE
+    //  6 red-team-2-r1      (4) — REJECT (revision-1)
+    //  7 hypothesis-smith-2 revision (4)
+    //  8 red-team-2-r2      (4) — APPROVE
+    //  9 eval-designer-1    (4)  [for survivor hypothesis-smith-1]
+    // 10 eval-designer-2    (4)  [for survivor hypothesis-smith-2]
+    // 11 synthesist         (4)
+    let turns: Vec<Vec<StreamEvent>> = {
+        let mut t = run_turns(1); // scout-1
+        t.extend(gapfinder_turns_with_gaps(2)); // gap-finder-1 (2 gaps)
+        t.extend(run_turns(2)); // smith-1, smith-2
+        t.extend(redteam_turns("APPROVE")); // red-team-1-r1
+        t.extend(redteam_turns("REJECT (revision-1)")); // red-team-2-r1
+        t.extend(run_turns(1)); // smith-2 revision
+        t.extend(redteam_turns("APPROVE")); // red-team-2-r2
+        t.extend(evaldesign_turns(false)); // eval-designer-1
+        t.extend(evaldesign_turns(false)); // eval-designer-2
+        t.extend(run_turns(1)); // synthesist
+        t
+    };
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let orch = Orchestrator::new(
+        OrchestratorConfig {
+            research_base: research_base.clone(),
+            agents_dir: fixture_agents_dir(),
+            default_model: "fake-model".into(),
+            max_parallel: 1,
+        },
+        provider,
+    );
+    let out = orch
+        .execute(
+            &spec_path,
+            &fixture_hypothesis_plan_path(),
+            "2026-06-27-0430-a2b3c4",
+        )
+        .await
+        .unwrap();
+    let run_dir = out.run_dir.clone();
+    let by_name: std::collections::HashMap<String, String> =
+        out.phase_statuses.into_iter().collect();
+    // All six phases complete; no critique phase skipped.
+    assert_eq!(by_name["literature-scout"], "complete");
+    assert_eq!(by_name["gap-finder"], "complete");
+    assert_eq!(by_name["hypothesis-smith"], "complete");
+    assert_eq!(by_name["red-team"], "complete");
+    assert_eq!(by_name["eval-designer"], "complete");
+    assert_eq!(by_name["synthesist"], "complete");
+    assert!(out.escalations.is_empty());
+
+    // Phase 4 produced two red-team rounds for hypothesis 2 (r1 reject, r2 approve)
+    // and one for hypothesis 1.
+    assert!(run_dir.join("red-team-1-r1").join("output.md").exists());
+    assert!(run_dir.join("red-team-2-r1").join("output.md").exists());
+    assert!(run_dir.join("red-team-2-r2").join("output.md").exists());
+    // Two eval-designer dirs (one per survivor).
+    assert!(run_dir.join("eval-designer-1").join("output.md").exists());
+    assert!(run_dir.join("eval-designer-2").join("output.md").exists());
+    // Run-root output.md + symlink resolve to it.
+    assert!(run_dir.join("output.md").exists());
+    let link = research_base.join("specs/hypothesis-spec-latest.md");
+    assert!(link.exists());
+    assert_eq!(
+        fs::read_to_string(&link).unwrap(),
+        fs::read_to_string(run_dir.join("output.md")).unwrap()
+    );
+    // The synthesist wrote its three artifacts.
+    assert!(run_dir.join("synthesist").join("output.md").exists());
+    assert!(run_dir.join("synthesist").join("manifest.yaml").exists());
+}
+
+#[tokio::test]
+async fn full_hypothesis_integration_test_kill_halts_run() {
+    let tmp = tempdir().unwrap();
+    let research_base = tmp.path().join("research");
+    fs::create_dir_all(&research_base).unwrap();
+    let spec_path = research_base.join("specs/hypothesis-spec.md");
+    fs::create_dir_all(spec_path.parent().unwrap()).unwrap();
+    fs::copy(fixture_hypothesis_spec_path(), &spec_path).unwrap();
+
+    // 1 scout + 1 gap-finder(1 gap) + 1 smith + 1 red-team KILL.
+    // The red-team KILL escalates hypothesis-smith-1; all survivors gone ->
+    // execute returns Err(Escalated(["hypothesis-smith-1"])).
+    let turns: Vec<Vec<StreamEvent>> = {
+        let mut t = run_turns(1); // scout-1
+        t.extend(gapfinder_turns_with_gaps(1)); // gap-finder-1
+        t.extend(run_turns(1)); // hypothesis-smith-1
+        t.extend(redteam_turns("KILL (irrecoverable)")); // red-team-1-r1
+        t
+    };
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let orch = Orchestrator::new(
+        OrchestratorConfig {
+            research_base: research_base.clone(),
+            agents_dir: fixture_agents_dir(),
+            default_model: "fake-model".into(),
+            max_parallel: 1,
+        },
+        provider,
+    );
+    let err = orch
+        .execute(
+            &spec_path,
+            &fixture_hypothesis_plan_path(),
+            "2026-06-27-0500-f4e5d6",
+        )
+        .await
+        .expect_err("kill should escalate and halt");
+    match err {
+        OrchestratorError::Escalated(names) => {
+            assert_eq!(names, vec!["hypothesis-smith-1".to_string()]);
+        }
+        other => panic!("expected Escalated, got {other:?}"),
+    }
+}
