@@ -7,7 +7,7 @@ pub enum AtFileIssue {
     TooLarge(usize), // size in KB that exceeds limit
     Binary,
     Unreadable(String), // error message
-    IsDirectory, // Path points to a directory, not a file
+    IsDirectory,        // Path points to a directory, not a file
 }
 
 /// A parsed file reference from the user's input (e.g., "@src/main.rs").
@@ -28,7 +28,11 @@ pub struct AtFileRef {
 /// Parse word-boundary @ tokens from text.
 /// Returns (within_limit, oversized).
 /// If max_size_kb == 0, oversized is always empty (accept all).
-pub fn parse_at_refs(text: &str, cwd: &Path, max_size_kb: usize) -> (Vec<AtFileRef>, Vec<AtFileRef>) {
+pub fn parse_at_refs(
+    text: &str,
+    cwd: &Path,
+    max_size_kb: usize,
+) -> (Vec<AtFileRef>, Vec<AtFileRef>) {
     let mut within_limit = Vec::new();
     let mut oversized = Vec::new();
 
@@ -45,7 +49,10 @@ pub fn parse_at_refs(text: &str, cwd: &Path, max_size_kb: usize) -> (Vec<AtFileR
         let mut token = word.to_string();
 
         // Remove trailing punctuation, but never strip the leading '@' itself.
-        while token.len() > 1 && token.ends_with(|c: char| c.is_ascii_punctuation()) && !token.ends_with('/') {
+        while token.len() > 1
+            && token.ends_with(|c: char| c.is_ascii_punctuation())
+            && !token.ends_with('/')
+        {
             token.pop();
         }
 
@@ -55,9 +62,9 @@ pub fn parse_at_refs(text: &str, cwd: &Path, max_size_kb: usize) -> (Vec<AtFileR
         }
 
         // Expand ~ to home directory
-        let expanded_path = if path_part.starts_with("~/") {
+        let expanded_path = if let Some(rest) = path_part.strip_prefix("~/") {
             if let Some(home) = dirs::home_dir() {
-                home.join(&path_part[2..])
+                home.join(rest)
             } else {
                 cwd.join(path_part)
             }
@@ -84,7 +91,7 @@ pub fn parse_at_refs(text: &str, cwd: &Path, max_size_kb: usize) -> (Vec<AtFileR
         }
 
         let size_kb = match fs::metadata(&expanded_path) {
-            Ok(meta) => (meta.len() as usize + 1023) / 1024, // Round up to KB
+            Ok(meta) => (meta.len() as usize).div_ceil(1024), // Round up to KB
             Err(e) => {
                 oversized.push(AtFileRef {
                     token: token.clone(),
@@ -185,7 +192,10 @@ mod tests {
     #[test]
     fn test_parse_at_refs_nonexistent() {
         let temp = TempDir::new().unwrap();
-        let input = format!("Please check @{}", temp.path().join("nonexistent.txt").display());
+        let input = format!(
+            "Please check @{}",
+            temp.path().join("nonexistent.txt").display()
+        );
 
         let (within, oversized) = parse_at_refs(&input, temp.path(), 1024);
         assert_eq!(within.len(), 0);

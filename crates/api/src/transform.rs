@@ -5,9 +5,9 @@
 // in both directions (outbound request serialisation and inbound response
 // deserialisation).
 
+use crate::provider::ModelInfo;
 use crate::provider_error::ProviderError;
 use crate::provider_types::{ProviderRequest, ProviderResponse};
-use crate::provider::ModelInfo;
 
 // ---------------------------------------------------------------------------
 // MessageTransformer
@@ -32,6 +32,7 @@ pub trait MessageTransformer: Send + Sync {
 
     /// Deserialize a provider-specific JSON response body into a
     /// `ProviderResponse`.
+    #[allow(clippy::wrong_self_convention)]
     fn from_provider(
         &self,
         response: &serde_json::Value,

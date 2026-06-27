@@ -32,6 +32,7 @@ impl EffortLevel {
     ///
     /// Accepts lowercase strings: `"low"`, `"medium"`, `"high"`, `"max"`.
     /// Returns `None` for any other value.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_ascii_lowercase().as_str() {
             "low" => Some(Self::Low),
@@ -136,7 +137,12 @@ mod tests {
             EffortLevel::Max,
         ] {
             let parsed = EffortLevel::from_str(level.as_str());
-            assert_eq!(parsed, Some(level), "from_str({:?}) should round-trip", level);
+            assert_eq!(
+                parsed,
+                Some(level),
+                "from_str({:?}) should round-trip",
+                level
+            );
         }
     }
 
