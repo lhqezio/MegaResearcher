@@ -15,7 +15,6 @@ use crate::tasks_overlay::render_tasks_overlay;
 use crate::dialogs::{render_mcp_approval_dialog, render_permission_dialog};
 use crate::feedback_survey::render_feedback_survey;
 use crate::overage_upsell::render_overage_upsell;
-use crate::voice_mode_notice::render_voice_mode_notice;
 use crate::desktop_upsell_startup::render_desktop_upsell_startup;
 use crate::memory_update_notification::render_memory_update_notification;
 use crate::import_config_dialog::render_import_config_dialog;
@@ -579,15 +578,6 @@ pub fn render_app(frame: &mut Frame, app: &App) {
         if size.height > banner_h + 4 {
             let banner_area = Rect { x: size.x, y: size.y, width: size.width, height: banner_h };
             render_overage_upsell(&app.overage_upsell, banner_area, frame.buffer_mut());
-        }
-    }
-
-    // Voice mode availability notice
-    if app.voice_mode_notice.visible {
-        let notice_h = app.voice_mode_notice.height();
-        if size.height > notice_h + 4 {
-            let notice_area = Rect { x: size.x, y: size.y, width: size.width, height: notice_h };
-            render_voice_mode_notice(&app.voice_mode_notice, notice_area, frame.buffer_mut());
         }
     }
 
@@ -2001,8 +1991,7 @@ fn should_render_status_row(app: &App) -> bool {
         })
         .unwrap_or(false);
 
-    app.voice_recording
-        || app.last_turn_elapsed.is_some()
+    app.last_turn_elapsed.is_some()
         || (!app.is_streaming && app.status_message.is_some())
         || (app.is_streaming && interesting_stream_status)
 }
@@ -2012,12 +2001,7 @@ fn render_status_row(frame: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let spans = if app.voice_recording {
-        vec![Span::styled(
-            format!("{} Recording... press Alt+V to transcribe", figures::black_circle()),
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-        )]
-    } else if app.is_streaming {
+    let spans = if app.is_streaming {
         // Pick a label: use the status message if it has real content,
         // otherwise show a default "Thinking" shimmer so the user always
         // sees that the model is working.
@@ -2125,13 +2109,8 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
         height: 1,
     };
 
-    // Left side: ordered pills — voice > PR badge > background task > vim > hint
-    let left_spans: Vec<Span> = if app.voice_recording {
-        vec![Span::styled(
-            format!(" {} REC — speak now", figures::black_circle()),
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-        )]
-    } else {
+    // Left side: ordered pills — PR badge > background task > vim > hint
+    let left_spans: Vec<Span> = {
         let mut spans: Vec<Span> = Vec::new();
 
         // Agent type badge (shown when running as subagent / coordinator)
