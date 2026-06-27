@@ -1,0 +1,10 @@
+[package]
+name = "megaresearcher-research"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+name = "megaresearcher_research"
+path = "src/lib.rs"
