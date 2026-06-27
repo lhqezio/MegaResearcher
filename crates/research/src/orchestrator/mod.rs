@@ -19,7 +19,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use claurst_api::LlmProvider;
+use claurst_core::config::McpServerConfig;
 
+use crate::mcp::McpToolSet;
 use crate::orchestrator::consolidate::{consolidate_bibliography, consolidate_gaps};
 use crate::orchestrator::dispatch::{build_prompt, dispatch_wave, WorkerSpec};
 use crate::orchestrator::dispatch_plan::parse_plan;
@@ -34,6 +36,7 @@ use crate::orchestrator::redteam::run_redteam_loop;
 use crate::orchestrator::synthesize::{finalize_run, run_synthesist};
 use crate::state::run_tree::create_run_tree;
 use crate::worker::WorkerError;
+use crate::worker_tools::Tool;
 
 /// Orchestrator-wide error.
 #[derive(Debug)]
@@ -74,13 +77,16 @@ impl From<WorkerError> for OrchestratorError {
 }
 
 /// Orchestrator configuration: where runs live, where agent prompt assets
-/// are, the model to resolve "inherit" to, and the wave concurrency bound.
+/// are, the model to resolve "inherit" to, the wave concurrency bound, and an
+/// optional MCP server (ml-intern) to connect in pre-flight. When `mcp` is
+/// `None`, workers get only the jailed Read/Write tools (fake-provider tests).
 #[derive(Debug, Clone)]
 pub struct OrchestratorConfig {
     pub research_base: PathBuf,
     pub agents_dir: PathBuf,
     pub default_model: String,
     pub max_parallel: u32,
+    pub mcp: Option<McpServerConfig>,
 }
 
 /// The orchestrator: config + a shared provider.
@@ -110,6 +116,26 @@ impl Orchestrator {
 
         preflight_check(spec_path, plan_path, &self.config.agents_dir, target)
             .map_err(OrchestratorError::Preflight)?;
+
+        // Connect the MCP server (ml-intern) in pre-flight: pre-warm the uv
+        // venv, then connect the stdio subprocess. When `config.mcp` is `None`
+        // (no MCP server configured, e.g. fake-provider tests), `extra_tools`
+        // is empty and workers get only the jailed Read/Write tools — the
+        // existing gap-finding / hypothesis integration tests stay
+        // byte-identical.
+        let mcp_set: Option<McpToolSet> =
+            if let Some(mcp_cfg) = self.config.mcp.as_ref() {
+                Some(McpToolSet::connect(mcp_cfg).await.map_err(|e| {
+                    OrchestratorError::Preflight(format!("ml-intern unreachable: {e}"))
+                })?)
+            } else {
+                None
+            };
+        let empty: Vec<Arc<dyn Tool>> = Vec::new();
+        let extra_tools: &[Arc<dyn Tool>] = match &mcp_set {
+            Some(s) => s.tools(),
+            None => &empty,
+        };
 
         let run_dir = create_run_tree(&self.config.research_base, run_id)?;
         let mut swarm = build_initial_swarm_state(
@@ -146,7 +172,7 @@ impl Orchestrator {
             self.provider.clone(),
             &self.config.default_model,
             self.config.max_parallel,
-            &[],
+            extra_tools,
         )
         .await?;
         let scout_gates = verify_wave(
@@ -155,7 +181,7 @@ impl Orchestrator {
             &self.config.agents_dir,
             self.provider.clone(),
             &self.config.default_model,
-            &[],
+            extra_tools,
         )
         .await?;
         let scout_workers: Vec<(String, String)> = scout_gates
@@ -214,7 +240,7 @@ impl Orchestrator {
             self.provider.clone(),
             &self.config.default_model,
             self.config.max_parallel,
-            &[],
+            extra_tools,
         )
         .await?;
         let gap_gates = verify_wave(
@@ -223,7 +249,7 @@ impl Orchestrator {
             &self.config.agents_dir,
             self.provider.clone(),
             &self.config.default_model,
-            &[],
+            extra_tools,
         )
         .await?;
         let gap_workers: Vec<(String, String)> = gap_gates
@@ -261,7 +287,7 @@ impl Orchestrator {
                     self.provider.clone(),
                     &self.config.default_model,
                     self.config.max_parallel,
-                    &[],
+                    extra_tools,
                 )
                 .await?;
                 let smith_dirs: Vec<PathBuf> = hypotheses.iter().map(|h| h.dir.clone()).collect();
@@ -284,7 +310,7 @@ impl Orchestrator {
                     &self.config.default_model,
                     self.config.max_parallel,
                     &mut swarm,
-                    &[],
+                    extra_tools,
                 )
                 .await?;
                 let redteam_dirs = rt.redteam_dirs;
@@ -313,7 +339,7 @@ impl Orchestrator {
                     &self.config.default_model,
                     self.config.max_parallel,
                     &mut swarm,
-                    &[],
+                    extra_tools,
                 )
                 .await?;
                 let eval_dirs = ed.eval_dirs;
@@ -340,7 +366,7 @@ impl Orchestrator {
             self.provider.clone(),
             &self.config.default_model,
             self.config.max_parallel,
-            &[],
+            extra_tools,
         )
         .await?;
         let synth_gates = verify_wave(
@@ -349,7 +375,7 @@ impl Orchestrator {
             &self.config.agents_dir,
             self.provider.clone(),
             &self.config.default_model,
-            &[],
+            extra_tools,
         )
         .await?;
         let synth_status = gate_status_str(synth_gates[0].status);

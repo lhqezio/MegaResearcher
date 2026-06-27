@@ -558,6 +558,7 @@ async fn execute_phases_1_and_2_for_gap_finding() {
             agents_dir: agents,
             default_model: "fake-model".into(),
             max_parallel: 1,
+            mcp: None,
         },
         provider,
     );
@@ -624,6 +625,7 @@ async fn execute_halts_on_worker_escalation() {
             agents_dir: fixture_agents_dir(),
             default_model: "fake-model".into(),
             max_parallel: 1,
+            mcp: None,
         },
         provider,
     );
@@ -727,6 +729,7 @@ async fn full_gap_finding_integration_test() {
             agents_dir: fixture_agents_dir(),
             default_model: "fake-model".into(),
             max_parallel: 1,
+            mcp: None,
         },
         provider,
     );
@@ -1530,6 +1533,7 @@ async fn execute_runs_full_hypothesis_path_minimal() {
             agents_dir: fixture_agents_dir(),
             default_model: "fake-model".into(),
             max_parallel: 1,
+            mcp: None,
         },
         provider,
     );
@@ -1614,6 +1618,7 @@ async fn full_hypothesis_integration_test_with_revision_loop() {
             agents_dir: fixture_agents_dir(),
             default_model: "fake-model".into(),
             max_parallel: 1,
+            mcp: None,
         },
         provider,
     );
@@ -1685,6 +1690,7 @@ async fn full_hypothesis_integration_test_kill_halts_run() {
             agents_dir: fixture_agents_dir(),
             default_model: "fake-model".into(),
             max_parallel: 1,
+            mcp: None,
         },
         provider,
     );
