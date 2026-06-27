@@ -16,6 +16,7 @@ use crate::orchestrator::hypothesis::Hypothesis;
 use crate::orchestrator::preflight::add_escalation;
 use crate::orchestrator::OrchestratorError;
 use crate::state::swarm_state::SwarmState;
+use crate::worker_tools::Tool;
 
 /// The Phase 5 outcome: the eval-designer dirs (for synthesis) and the
 /// per-hypothesis phase-worker status (`passed` / `intractable`).
@@ -74,6 +75,7 @@ pub async fn run_eval_designers(
     default_model: &str,
     max_parallel: u32,
     swarm: &mut SwarmState,
+    extra_tools: &[Arc<dyn Tool>],
 ) -> Result<EvalDesignResult, OrchestratorError> {
     let specs: Vec<WorkerSpec> = survivors
         .iter()
@@ -96,10 +98,18 @@ pub async fn run_eval_designers(
         provider.clone(),
         default_model,
         max_parallel,
-        &[],
+        extra_tools,
     )
     .await?;
-    let gates = verify_wave(outcomes, &specs, agents_dir, provider, default_model, &[]).await?;
+    let gates = verify_wave(
+        outcomes,
+        &specs,
+        agents_dir,
+        provider,
+        default_model,
+        extra_tools,
+    )
+    .await?;
 
     let mut eval_dirs = Vec::with_capacity(specs.len());
     let mut phase_workers = Vec::with_capacity(specs.len());

@@ -12,6 +12,7 @@ use crate::orchestrator::dispatch_plan::Assignment;
 use crate::orchestrator::gaps::Gap;
 use crate::orchestrator::gate::{verify_wave, GateStatus};
 use crate::orchestrator::OrchestratorError;
+use crate::worker_tools::Tool;
 
 /// A hypothesis forged in Phase 3 and carried through Phases 4 and 5. `name` is
 /// `hypothesis-smith-<N>`; `dir` is `run_dir/hypothesis-smith-<N>`; `gap` is the
@@ -64,6 +65,7 @@ pub fn build_smith_spec(
 /// by `max_parallel`. Run the verification gate. Any gate escalation halts the
 /// run with `Err(Escalated)` (matching scout/gap-finder gate behavior). On
 /// success returns one `Hypothesis` per gap.
+#[allow(clippy::too_many_arguments)]
 pub async fn dispatch_hypothesis_smiths(
     run_dir: &Path,
     spec_text: &str,
@@ -72,6 +74,7 @@ pub async fn dispatch_hypothesis_smiths(
     provider: Arc<dyn LlmProvider>,
     default_model: &str,
     max_parallel: u32,
+    extra_tools: &[Arc<dyn Tool>],
 ) -> Result<Vec<Hypothesis>, OrchestratorError> {
     let specs: Vec<WorkerSpec> = gaps
         .iter()
@@ -89,10 +92,18 @@ pub async fn dispatch_hypothesis_smiths(
         provider.clone(),
         default_model,
         max_parallel,
-        &[],
+        extra_tools,
     )
     .await?;
-    let gates = verify_wave(outcomes, &specs, agents_dir, provider, default_model, &[]).await?;
+    let gates = verify_wave(
+        outcomes,
+        &specs,
+        agents_dir,
+        provider,
+        default_model,
+        extra_tools,
+    )
+    .await?;
     let escalated: Vec<String> = gates
         .iter()
         .filter(|g| g.status == GateStatus::Escalated)
@@ -122,6 +133,7 @@ pub async fn redispatch_smith_revision(
     agents_dir: &Path,
     provider: Arc<dyn LlmProvider>,
     default_model: &str,
+    extra_tools: &[Arc<dyn Tool>],
 ) -> Result<(), OrchestratorError> {
     let spec = build_smith_spec(
         spec_text,
@@ -137,7 +149,7 @@ pub async fn redispatch_smith_revision(
         provider.clone(),
         default_model,
         1,
-        &[],
+        extra_tools,
     )
     .await?;
     let gates = verify_wave(
@@ -146,7 +158,7 @@ pub async fn redispatch_smith_revision(
         agents_dir,
         provider,
         default_model,
-        &[],
+        extra_tools,
     )
     .await?;
     if gates[0].status == GateStatus::Escalated {

@@ -261,6 +261,7 @@ impl Orchestrator {
                     self.provider.clone(),
                     &self.config.default_model,
                     self.config.max_parallel,
+                    &[],
                 )
                 .await?;
                 let smith_dirs: Vec<PathBuf> = hypotheses.iter().map(|h| h.dir.clone()).collect();
@@ -283,6 +284,7 @@ impl Orchestrator {
                     &self.config.default_model,
                     self.config.max_parallel,
                     &mut swarm,
+                    &[],
                 )
                 .await?;
                 let redteam_dirs = rt.redteam_dirs;
@@ -311,6 +313,7 @@ impl Orchestrator {
                     &self.config.default_model,
                     self.config.max_parallel,
                     &mut swarm,
+                    &[],
                 )
                 .await?;
                 let eval_dirs = ed.eval_dirs;
@@ -337,6 +340,7 @@ impl Orchestrator {
             self.provider.clone(),
             &self.config.default_model,
             self.config.max_parallel,
+            &[],
         )
         .await?;
         let synth_gates = verify_wave(

@@ -12,6 +12,7 @@ use claurst_api::LlmProvider;
 use crate::orchestrator::dispatch::{build_prompt, dispatch_wave, WorkerSpec};
 use crate::orchestrator::OrchestratorError;
 use crate::worker::WorkerOutcome;
+use crate::worker_tools::Tool;
 
 /// Build and run the single synthesist worker, inlining the spec, the plan,
 /// every scout output, and every gap-finder output. Returns the spec (so the
@@ -30,6 +31,7 @@ pub async fn run_synthesist(
     provider: Arc<dyn LlmProvider>,
     default_model: &str,
     max_parallel: u32,
+    extra_tools: &[Arc<dyn Tool>],
 ) -> Result<(WorkerSpec, WorkerOutcome), OrchestratorError> {
     let mut prior: Vec<(String, String)> = Vec::new();
     prior.push(("Plan".to_string(), plan_text.to_string()));
@@ -80,7 +82,7 @@ pub async fn run_synthesist(
         provider,
         default_model,
         max_parallel,
-        &[],
+        extra_tools,
     )
     .await?;
     let (_, outcome) = outcomes

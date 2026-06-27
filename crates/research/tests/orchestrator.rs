@@ -671,6 +671,7 @@ async fn run_synthesist_inlines_all_outputs_and_writes_artifacts() {
         provider,
         "fake-model",
         1,
+        &[],
     )
     .await
     .unwrap();
@@ -1042,6 +1043,7 @@ async fn dispatch_hypothesis_smiths_one_per_gap_and_gates() {
         provider,
         "fake-model",
         1,
+        &[],
     )
     .await
     .unwrap();
@@ -1079,6 +1081,7 @@ async fn dispatch_hypothesis_smiths_halts_on_gate_escalation() {
         provider,
         "fake-model",
         1,
+        &[],
     )
     .await
     .expect_err("should escalate");
@@ -1115,6 +1118,7 @@ async fn redispatch_smith_revision_overwrites_output_and_gates() {
         &fixture_agents_dir(),
         provider,
         "fake-model",
+        &[],
     )
     .await
     .unwrap();
@@ -1179,6 +1183,7 @@ async fn redteam_loop_approves_on_first_round() {
         "fake-model",
         1,
         &mut swarm,
+        &[],
     )
     .await
     .unwrap();
@@ -1215,6 +1220,7 @@ async fn redteam_loop_revises_then_approves() {
         "fake-model",
         1,
         &mut swarm,
+        &[],
     )
     .await
     .unwrap();
@@ -1245,6 +1251,7 @@ async fn redteam_loop_kills_on_kill_verdict() {
         "fake-model",
         1,
         &mut swarm,
+        &[],
     )
     .await
     .unwrap();
@@ -1284,6 +1291,7 @@ async fn redteam_loop_escalates_after_three_revisions() {
         "fake-model",
         1,
         &mut swarm,
+        &[],
     )
     .await
     .unwrap();
@@ -1393,6 +1401,7 @@ async fn eval_designers_one_per_survivor_and_gates() {
         "fake-model",
         1,
         &mut swarm,
+        &[],
     )
     .await
     .unwrap();
@@ -1425,6 +1434,7 @@ async fn eval_designer_intractable_is_escalated_but_kept_in_dirs() {
         "fake-model",
         1,
         &mut swarm,
+        &[],
     )
     .await
     .unwrap();
@@ -1455,6 +1465,7 @@ async fn eval_designers_halt_on_gate_escalation() {
         "fake-model",
         1,
         &mut swarm,
+        &[],
     )
     .await
     .expect_err("should escalate");

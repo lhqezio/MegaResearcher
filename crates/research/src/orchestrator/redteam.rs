@@ -16,6 +16,7 @@ use crate::orchestrator::hypothesis::{redispatch_smith_revision, Hypothesis};
 use crate::orchestrator::verdict::{parse_redteam_verdict_file, RedTeamVerdict};
 use crate::orchestrator::OrchestratorError;
 use crate::state::swarm_state::SwarmState;
+use crate::worker_tools::Tool;
 
 /// Cap on red-team revisions before a hypothesis is escalated.
 pub const REVISION_CAP: u32 = 3;
@@ -66,6 +67,7 @@ pub async fn run_redteam_loop(
     default_model: &str,
     max_parallel: u32,
     swarm: &mut SwarmState,
+    extra_tools: &[Arc<dyn Tool>],
 ) -> Result<RedTeamResult, OrchestratorError> {
     let mut survivors = Vec::new();
     let mut killed = Vec::new();
@@ -111,7 +113,7 @@ pub async fn run_redteam_loop(
                 provider.clone(),
                 default_model,
                 max_parallel.max(1),
-                &[],
+                extra_tools,
             )
             .await?;
             let gates = verify_wave(
@@ -120,7 +122,7 @@ pub async fn run_redteam_loop(
                 agents_dir,
                 provider.clone(),
                 default_model,
-                &[],
+                extra_tools,
             )
             .await?;
             if gates[0].status == GateStatus::Escalated {
@@ -165,6 +167,7 @@ pub async fn run_redteam_loop(
                         agents_dir,
                         provider.clone(),
                         default_model,
+                        extra_tools,
                     )
                     .await?;
                     // Loop: next round dispatches red-team again on the revised hypothesis.
