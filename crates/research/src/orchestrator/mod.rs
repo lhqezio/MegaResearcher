@@ -4,6 +4,7 @@
 
 pub mod dispatch;
 pub mod dispatch_plan;
+pub mod gate;
 pub mod preflight;
 
 use std::io;

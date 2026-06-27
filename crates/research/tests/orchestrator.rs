@@ -274,3 +274,93 @@ async fn run_worker_resolves_inherit_model() {
     assert_eq!(outcome.stop, WorkerStop::EndTurn);
     assert!(dir.join("output.md").exists());
 }
+
+use megaresearcher_research::orchestrator::gate::{
+    verify_wave, GateStatus, REQUIRED_ARTIFACTS,
+};
+
+fn spec_for(name: &str, dir: &Path, run_dir: &Path) -> megaresearcher_research::orchestrator::dispatch::WorkerSpec {
+    megaresearcher_research::orchestrator::dispatch::WorkerSpec {
+        name: name.into(),
+        role: "literature-scout".into(),
+        output_dir: dir.to_path_buf(),
+        shared_dir: run_dir.to_path_buf(),
+        prompt: build_prompt("SPEC", &[], None, dir),
+    }
+}
+
+#[tokio::test]
+async fn gate_passes_when_all_artifacts_present_first_try() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("runs/rid");
+    let dir = run_dir.join("literature-scout-1");
+    fs::create_dir_all(&dir).unwrap();
+    let fake = Arc::new(FakeProvider::new("fake", three_artifact_turns()));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let spec = spec_for("literature-scout-1", &dir, &run_dir);
+    let outcomes = [run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model").await.unwrap()];
+    let outcomes = vec![("literature-scout-1".to_string(), outcomes[0].clone())];
+    let gate = verify_wave(outcomes, std::slice::from_ref(&spec), &fixture_agents_dir(), provider, "fake-model").await.unwrap();
+    assert_eq!(gate.len(), 1);
+    assert_eq!(gate[0].status, GateStatus::Passed);
+    assert_eq!(gate[0].retries, 0);
+}
+
+#[tokio::test]
+async fn gate_retries_then_passes_on_missing_artifact() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("runs/rid");
+    let dir = run_dir.join("literature-scout-1");
+    fs::create_dir_all(&dir).unwrap();
+
+    // First run writes output.md + manifest only (3 turns), then the retry
+    // writes verification.md + final (2 turns). 5 scripted turns total.
+    let turns: Vec<Vec<StreamEvent>> = vec![
+        write_turn("output.md", "x"),
+        write_turn("manifest.yaml", "y"),
+        final_turn("partial"),
+        write_turn("verification.md", "z"),
+        final_turn("done"),
+    ];
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let spec = spec_for("literature-scout-1", &dir, &run_dir);
+    let first = run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model").await.unwrap();
+    let outcomes = vec![("literature-scout-1".to_string(), first)];
+    let gate = verify_wave(outcomes, std::slice::from_ref(&spec), &fixture_agents_dir(), provider, "fake-model").await.unwrap();
+    assert_eq!(gate[0].status, GateStatus::Passed);
+    assert_eq!(gate[0].retries, 1);
+    assert!(dir.join("verification.md").exists());
+    assert_eq!(fake.call_count(), 5); // 3 first run + 2 retry
+}
+
+#[tokio::test]
+async fn gate_escalates_when_retry_still_missing() {
+    let tmp = tempdir().unwrap();
+    let run_dir = tmp.path().join("runs/rid");
+    let dir = run_dir.join("literature-scout-1");
+    fs::create_dir_all(&dir).unwrap();
+
+    // First run writes output + manifest only; retry writes nothing (final
+    // immediately). verification.md never appears -> Escalated.
+    let turns: Vec<Vec<StreamEvent>> = vec![
+        write_turn("output.md", "x"),
+        write_turn("manifest.yaml", "y"),
+        final_turn("partial"),
+        final_turn("still partial"),
+    ];
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let spec = spec_for("literature-scout-1", &dir, &run_dir);
+    let first = run_worker(&spec, &fixture_agents_dir(), provider.clone(), "fake-model").await.unwrap();
+    let outcomes = vec![("literature-scout-1".to_string(), first)];
+    let gate = verify_wave(outcomes, std::slice::from_ref(&spec), &fixture_agents_dir(), provider, "fake-model").await.unwrap();
+    assert_eq!(gate[0].status, GateStatus::Escalated);
+    assert_eq!(gate[0].retries, 1);
+    assert!(!dir.join("verification.md").exists());
+}
+
+#[test]
+fn required_artifacts_constant() {
+    assert_eq!(REQUIRED_ARTIFACTS, &["output.md", "manifest.yaml", "verification.md"]);
+}
