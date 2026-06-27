@@ -2464,6 +2464,7 @@ dependencies = [
 name = "megaresearcher-research"
 version = "0.1.6"
 dependencies = [
+ "anyhow",
  "async-trait",
  "chrono",
  "claurst-api",

@@ -14,6 +14,7 @@ pub mod paper_chain;
 pub mod phases;
 pub mod prompt_asset;
 pub mod state;
+pub mod verify;
 pub mod worker;
 pub mod worker_tools;
 
