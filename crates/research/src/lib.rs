@@ -7,6 +7,7 @@
 //! worker primitive, the front-half guided phases, the HTML export, and the
 //! doom-loop discipline trait.
 
+pub mod orchestrator;
 pub mod paper_chain;
 pub mod prompt_asset;
 pub mod state;
