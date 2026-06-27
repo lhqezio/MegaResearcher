@@ -3,3 +3,4 @@
 //! consolidations, and finalizes the run. See the design spec §4/§10/§11.
 
 pub mod dispatch_plan;
+pub mod preflight;
