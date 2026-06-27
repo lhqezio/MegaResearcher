@@ -9,6 +9,7 @@ pub mod gaps;
 pub mod gate;
 pub mod preflight;
 pub mod synthesize;
+pub mod verdict;
 
 use std::io;
 use std::path::{Path, PathBuf};

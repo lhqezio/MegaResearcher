@@ -852,3 +852,78 @@ fn collect_gaps_skips_finders_whose_manifest_is_unreadable() {
     assert_eq!(gaps.len(), 1);
     assert_eq!(gaps[0].statement, "A.");
 }
+
+use megaresearcher_research::orchestrator::verdict::{parse_redteam_verdict, RedTeamVerdict};
+
+#[test]
+fn parse_redteam_verdict_approve() {
+    let md = "# Red-team critique\n\n1. **Verdict** — APPROVE\n\n2. Gap re-verification: ...\n";
+    assert_eq!(parse_redteam_verdict(md), Some(RedTeamVerdict::Approve));
+}
+
+#[test]
+fn parse_redteam_verdict_reject_with_revision_number() {
+    let md = "## Verdict\n\n**Verdict** — REJECT (revision-2)\n\nThe mechanism is unsupported.\n";
+    assert_eq!(
+        parse_redteam_verdict(md),
+        Some(RedTeamVerdict::Reject { revision: 2 })
+    );
+}
+
+#[test]
+fn parse_redteam_verdict_kill() {
+    let md = "1. **Verdict** — KILL (irrecoverable)\n\nThe gap is not actually unexplored.\n";
+    assert_eq!(parse_redteam_verdict(md), Some(RedTeamVerdict::Kill));
+}
+
+#[test]
+fn parse_redteam_verdict_tolerates_spacing_and_dash_variants() {
+    // Workers vary the em-dash / colon / spacing. Accept any of "—", "-", ":".
+    let cases = [
+        "Verdict: APPROVE",
+        "Verdict - APPROVE",
+        "**Verdict** — APPROVE",
+        "1. **Verdict** — REJECT (revision-1)",
+    ];
+    assert_eq!(
+        parse_redteam_verdict(cases[0]),
+        Some(RedTeamVerdict::Approve)
+    );
+    assert_eq!(
+        parse_redteam_verdict(cases[1]),
+        Some(RedTeamVerdict::Approve)
+    );
+    assert_eq!(
+        parse_redteam_verdict(cases[2]),
+        Some(RedTeamVerdict::Approve)
+    );
+    assert_eq!(
+        parse_redteam_verdict(cases[3]),
+        Some(RedTeamVerdict::Reject { revision: 1 })
+    );
+}
+
+#[test]
+fn parse_redteam_verdict_returns_none_when_no_verdict_line() {
+    let md = "# Red-team critique\n\nNo verdict here, just discussion.\n";
+    assert_eq!(parse_redteam_verdict(md), None);
+}
+
+#[test]
+fn parse_redteam_verdict_returns_none_for_format_description_lines() {
+    // A worker that echoes the agent's format instruction ("exactly one of: APPROVE | ...")
+    // must NOT be misread as an APPROVE verdict.
+    let md =
+        "The verdict is exactly one of: APPROVE | REJECT (revision-N) | KILL (irrecoverable).\n";
+    assert_eq!(parse_redteam_verdict(md), None);
+}
+
+#[test]
+fn parse_redteam_verdict_file_reads_disk() {
+    let tmp = tempdir().unwrap();
+    let p = tmp.path().join("red-team-1-r1").join("output.md");
+    fs::create_dir_all(p.parent().unwrap()).unwrap();
+    fs::write(&p, "1. **Verdict** — REJECT (revision-1)\n").unwrap();
+    let v = megaresearcher_research::orchestrator::verdict::parse_redteam_verdict_file(&p).unwrap();
+    assert_eq!(v, Some(RedTeamVerdict::Reject { revision: 1 }));
+}
