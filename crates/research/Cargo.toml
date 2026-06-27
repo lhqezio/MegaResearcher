@@ -2,8 +2,10 @@
 name = "megaresearcher-research"
 version.workspace = true
 edition.workspace = true
-authors.workspace = true
 license.workspace = true
+
+[dependencies]
+claurst-core = { workspace = true }
 
 [lib]
 name = "megaresearcher_research"
