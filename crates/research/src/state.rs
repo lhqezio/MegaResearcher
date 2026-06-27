@@ -1,2 +1,5 @@
 //! Run-state: `swarm-state.yaml` serde, run-id generation, run-tree management.
-//! Submodules are declared by Task 8.
+
+pub mod run_id;
+pub mod run_tree;
+pub mod swarm_state;
