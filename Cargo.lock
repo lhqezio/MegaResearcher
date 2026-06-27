@@ -2463,6 +2463,9 @@ dependencies = [
 [[package]]
 name = "megaresearcher-research"
 version = "0.1.6"
+dependencies = [
+ "claurst-core",
+]
 
 [[package]]
 name = "memchr"
