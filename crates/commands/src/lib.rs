@@ -232,7 +232,6 @@ pub struct SessionCommand;
 pub struct ThinkingCommand;
 // New commands
 pub struct ExportCommand;
-pub struct ShareCommand;
 pub struct LinksCommand;
 pub struct SkillsCommand;
 pub struct RewindCommand;
@@ -249,7 +248,6 @@ pub struct OutputStyleCommand;
 pub struct KeybindingsCommand;
 pub struct PrivacySettingsCommand;
 // Batch-1 new commands
-pub struct RemoteControlCommand;
 pub struct RemoteEnvCommand;
 pub struct ContextCommand;
 pub struct CopyCommand;
@@ -4402,134 +4400,6 @@ impl SlashCommand for ExportCommand {
     }
 }
 
-// ---- /share --------------------------------------------------------------
-
-#[async_trait]
-impl SlashCommand for ShareCommand {
-    fn name(&self) -> &str { "share" }
-    fn description(&self) -> &str {
-        "Upload the current session as a secret GitHub gist and return a shareable URL"
-    }
-    fn help(&self) -> &str {
-        "Usage: /share\n\n\
-         Renders the current session as a single self-contained HTML file,\n\
-         uploads it as a secret GitHub gist via the `gh` CLI, and prints a\n\
-         viewer URL of the form https://claurst.kuber.studio/session/#<gist-id>.\n\n\
-         Requirements:\n  \
-           - GitHub CLI (gh) installed and logged in (`gh auth login`).\n\n\
-         The viewer base URL can be overridden with CLAURST_SHARE_VIEWER_URL.\n\
-         Secret gists are unlisted but readable by anyone who has the link."
-    }
-
-    async fn execute(&self, _args: &str, ctx: &mut CommandContext) -> CommandResult {
-        use claurst_core::share_export::{share_viewer_url, write_session_html, SessionExportMeta};
-
-        // 1. Check that `gh` is installed and authenticated. Uses tokio::process
-        //    so the TUI event loop keeps animating during the (occasionally
-        //    slow) network round-trip.
-        match tokio::process::Command::new("gh")
-            .args(["auth", "status"])
-            .output()
-            .await
-        {
-            Err(_) => {
-                return CommandResult::Error(
-                    "GitHub CLI (gh) is not installed. Install it from https://cli.github.com/"
-                        .to_string(),
-                );
-            }
-            Ok(out) if !out.status.success() => {
-                return CommandResult::Error(
-                    "GitHub CLI is not logged in. Run `gh auth login` first.".to_string(),
-                );
-            }
-            Ok(_) => {}
-        }
-
-        // 2. Build metadata + render HTML to a temp file.
-        let meta = SessionExportMeta {
-            session_id: ctx.session_id.clone(),
-            title: ctx.session_title.clone(),
-            model: ctx.config.effective_model().to_string(),
-            working_dir: ctx.working_dir.display().to_string(),
-            exported_at: chrono::Utc::now().to_rfc3339(),
-            app_version: env!("CARGO_PKG_VERSION").to_string(),
-        };
-
-        let safe_id: String = ctx
-            .session_id
-            .chars()
-            .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
-            .collect();
-        let stem = if safe_id.is_empty() { "session".to_string() } else { safe_id };
-        let tmp = std::env::temp_dir().join(format!("claurst-session-{stem}.html"));
-
-        if let Err(e) = write_session_html(&tmp, &ctx.messages, &meta) {
-            return CommandResult::Error(format!("Failed to render session HTML: {e}"));
-        }
-
-        tracing::info!(target: "share", path = %tmp.display(), "Uploading session HTML as secret gist");
-
-        // 3. Upload as a secret gist (async, so the TUI stays responsive).
-        let result = tokio::process::Command::new("gh")
-            .args(["gist", "create", "--public=false"])
-            .arg(&tmp)
-            .output()
-            .await;
-
-        // Best-effort tmp cleanup.
-        let _ = std::fs::remove_file(&tmp);
-
-        let output = match result {
-            Ok(o) => o,
-            Err(e) => return CommandResult::Error(format!("Failed to spawn gh: {e}")),
-        };
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let msg = stderr.trim();
-            return CommandResult::Error(format!(
-                "gh gist create failed: {}",
-                if msg.is_empty() { "unknown error" } else { msg }
-            ));
-        }
-
-        // 4. Parse gist URL and derive the viewer URL.
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let gist_url = stdout.trim();
-        let gist_id = gist_url.rsplit('/').next().unwrap_or("").trim();
-        if gist_id.is_empty() {
-            return CommandResult::Error(format!(
-                "Could not parse gist id from gh output: {gist_url:?}"
-            ));
-        }
-        let viewer = share_viewer_url(gist_id);
-
-        // Auto-open in the system browser unless the user opted out — saves the
-        // copy/paste dance after a /share. Skipped when `CLAURST_SHARE_NO_OPEN`
-        // is set (e.g. on a headless box) or when `open` can't find a handler.
-        let opted_out = std::env::var_os("CLAURST_SHARE_NO_OPEN")
-            .map(|v| !v.is_empty() && v != "0")
-            .unwrap_or(false);
-        let opened = if opted_out {
-            false
-        } else {
-            open::that(&viewer).is_ok()
-        };
-
-        let footer = if opened {
-            "Opened in your browser. The gist is secret (unlisted); delete it to revoke access."
-        } else if opted_out {
-            "The gist is secret (unlisted). Anyone with the link can view it; delete the gist to revoke access."
-        } else {
-            "Could not auto-open the link. Copy the URL above. The gist is secret (unlisted); delete the gist to revoke access."
-        };
-
-        CommandResult::Message(format!(
-            "Share URL: {viewer}\nGist: {gist_url}\n\n{footer}"
-        ))
-    }
-}
-
 // ---- /links --------------------------------------------------------------
 
 /// Detect URLs in plain text. Mirrors the styling regex in tui::messages::markdown
@@ -5162,154 +5032,6 @@ where
     f(&mut s);
     save_ui_settings(&s)?;
     Ok(s)
-}
-
-// ---- /remote-control (/rc) -----------------------------------------------
-
-#[async_trait]
-impl SlashCommand for RemoteControlCommand {
-    fn name(&self) -> &str { "remote-control" }
-    fn aliases(&self) -> Vec<&str> { vec!["rc"] }
-    fn description(&self) -> &str { "Show or manage the remote control (Bridge) connection" }
-    fn help(&self) -> &str {
-        "Usage: /remote-control [start|stop|status]\n\n\
-         The Bridge feature lets you connect your local Claurst CLI to the\n\
-         claude.ai web UI or mobile app.\n\n\
-         Subcommands:\n\
-         /remote-control          Show current bridge status and connection URL\n\
-         /remote-control start    Start the remote-control bridge listener\n\
-         /remote-control stop     Stop the bridge listener\n\
-         /remote-control status   Show bridge status"
-    }
-
-    async fn execute(&self, args: &str, ctx: &mut CommandContext) -> CommandResult {
-        let settings = match claurst_core::config::Settings::load().await {
-            Ok(s) => s,
-            Err(e) => return CommandResult::Error(format!("Failed to load settings: {}", e)),
-        };
-
-        let remote_at_startup = settings.remote_control_at_startup;
-
-        match args.trim() {
-            "" | "status" => {
-                let hostname = hostname::get()
-                    .map(|h| h.to_string_lossy().into_owned())
-                    .unwrap_or_else(|_| "(unknown host)".to_string());
-
-                let bridge_url = std::env::var("CLAURST_BRIDGE_URL")
-                    .unwrap_or_else(|_| "https://claude.ai".to_string());
-
-                let token_status = if std::env::var("CLAURST_BRIDGE_TOKEN").is_ok()
-                    || std::env::var("CLAUDE_BRIDGE_OAUTH_TOKEN").is_ok()
-                {
-                    "configured via environment variable"
-                } else {
-                    "not set (required to connect)"
-                };
-
-                let startup_status =
-                    if remote_at_startup { "enabled at startup" } else { "disabled" };
-
-                // Active session info from context
-                let session_section = if let Some(ref url) = ctx.remote_session_url {
-                    format!(
-                        "\nActive Session\n\
-                         ──────────────\n\
-                         Session URL:  {url}\n\
-                         Share this URL or QR code with others to let them connect\n\
-                         to this Claurst session from the claude.ai web UI.\n",
-                        url = url
-                    )
-                } else {
-                    "\nNo active bridge session in this process.\n".to_string()
-                };
-
-                // Device fingerprint (first 12 chars are enough for display)
-                let fingerprint = claurst_bridge::device_fingerprint();
-                let fp_short = &fingerprint[..fingerprint.len().min(12)];
-
-                CommandResult::Message(format!(
-                    "Remote Control (Bridge)\n\
-                     ═══════════════════════\n\
-                     What it does: lets you connect the claude.ai web UI or mobile app\n\
-                     to this running Claurst CLI session on your local machine.\n\
-                     All prompts and responses are relayed bidirectionally.\n\
-                     \n\
-                     Local Machine\n\
-                     ─────────────\n\
-                     Hostname:     {hostname}\n\
-                     Device ID:    {fp_short}… (SHA-256 fingerprint)\n\
-                     \n\
-                     Bridge Configuration\n\
-                     ────────────────────\n\
-                     Bridge server:   {bridge_url}\n\
-                     Session token:   {token_status}\n\
-                     Startup mode:    {startup_status}\n\
-                     {session_section}\n\
-                     How to connect\n\
-                     ──────────────\n\
-                     1. Obtain a session token from claude.ai (Settings → Remote Control)\n\
-                     2. Set it:  export CLAURST_BRIDGE_TOKEN=<your-token>\n\
-                     3. Enable:  /remote-control start\n\
-                     4. Restart Claurst — the bridge will connect automatically\n\
-                     5. Open {bridge_url}/claude-code in your browser\n\
-                     \n\
-                     Note: Full bridge polling requires server-side session infrastructure.\n\
-                     The cc-bridge crate implements the complete protocol (register → poll\n\
-                     → events) and is ready to use once a valid session token is provided.\n\
-                     \n\
-                     Use /remote-control start   to enable bridge at next startup\n\
-                     Use /remote-control stop    to disable bridge at startup",
-                    hostname = hostname,
-                    fp_short = fp_short,
-                    bridge_url = bridge_url,
-                    token_status = token_status,
-                    startup_status = startup_status,
-                    session_section = session_section,
-                ))
-            }
-            "start" => {
-                if let Err(e) = save_settings_mutation(|s| s.remote_control_at_startup = true) {
-                    return CommandResult::Error(format!("Failed to save settings: {}", e));
-                }
-                let bridge_url = std::env::var("CLAURST_BRIDGE_URL")
-                    .unwrap_or_else(|_| "https://claude.ai".to_string());
-                let token_note = if std::env::var("CLAURST_BRIDGE_TOKEN").is_ok()
-                    || std::env::var("CLAUDE_BRIDGE_OAUTH_TOKEN").is_ok()
-                {
-                    "Session token detected in environment — bridge will connect on next start."
-                        .to_string()
-                } else {
-                    format!(
-                        "No session token found.\n\
-                         Get a token from {bridge_url} (Settings → Remote Control)\n\
-                         then run:  export CLAURST_BRIDGE_TOKEN=<token>",
-                        bridge_url = bridge_url
-                    )
-                };
-                CommandResult::Message(format!(
-                    "Remote control bridge enabled at startup.\n\
-                     Restart Claurst to activate the bridge connection.\n\n\
-                     {token_note}",
-                    token_note = token_note
-                ))
-            }
-            "stop" => {
-                if let Err(e) = save_settings_mutation(|s| s.remote_control_at_startup = false) {
-                    return CommandResult::Error(format!("Failed to save settings: {}", e));
-                }
-                CommandResult::Message(
-                    "Remote control bridge disabled.\n\
-                     The bridge will not start on next launch."
-                        .to_string(),
-                )
-            }
-            other => CommandResult::Error(format!(
-                "Unknown subcommand: '{}'\nUsage: /remote-control [start|stop|status]",
-                other
-            )),
-        }
-    }
 }
 
 // ---- /remote-env ---------------------------------------------------------
@@ -8879,7 +8601,6 @@ pub fn all_commands() -> Vec<Box<dyn SlashCommand>> {
         Box::new(PrivacySettingsCommand),
         // New commands
         Box::new(ExportCommand),
-        Box::new(ShareCommand),
         Box::new(LinksCommand),
         Box::new(SkillsCommand),
         Box::new(RewindCommand),
@@ -8974,7 +8695,6 @@ pub fn all_commands() -> Vec<Box<dyn SlashCommand>> {
             slash_help: "Usage: /stickers",
         }),
         // Batch-1 new commands
-        Box::new(RemoteControlCommand),
         Box::new(RemoteEnvCommand),
         Box::new(ContextCommand),
         Box::new(CopyCommand),
