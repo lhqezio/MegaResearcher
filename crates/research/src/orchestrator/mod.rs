@@ -5,6 +5,7 @@
 pub mod consolidate;
 pub mod dispatch;
 pub mod dispatch_plan;
+pub mod evaldesign;
 pub mod gaps;
 pub mod gate;
 pub mod hypothesis;

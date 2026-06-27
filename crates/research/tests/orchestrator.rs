@@ -1300,3 +1300,140 @@ fn redteam_loop_fixture(n: usize) -> (SwarmState, Vec<Hypothesis>, PathBuf) {
     };
     (swarm, hyps, run_dir)
 }
+
+use megaresearcher_research::orchestrator::evaldesign::{
+    build_evaldesigner_prompt, parse_intractable, run_eval_designers,
+};
+
+// Scripted turns for an eval-designer that writes a manifest with a given
+// flagged_intractable value.
+fn evaldesign_turns(intractable: bool) -> Vec<Vec<StreamEvent>> {
+    let manifest = format!(
+        "role: eval-designer\nhypothesis: h\ndatasets_count: 1\nbaselines_count: 3\nfalsification_experiments_count: 2\nflagged_intractable: {}\n",
+        intractable
+    );
+    vec![
+        write_turn("output.md", "# Eval plan\n\nThe experiment design."),
+        write_turn("manifest.yaml", &manifest),
+        write_turn("verification.md", "# Verification\n\nok"),
+        final_turn("Done."),
+    ]
+}
+
+#[test]
+fn build_evaldesigner_prompt_inlines_hypothesis() {
+    let tmp = tempdir().unwrap();
+    let spec =
+        build_evaldesigner_prompt("SPEC TEXT", "HYP BODY", &tmp.path().join("eval-designer-1"));
+    assert_eq!(spec.name, "eval-designer-1");
+    assert_eq!(spec.role, "eval-designer");
+    assert!(spec.prompt.contains("SPEC TEXT"));
+    assert!(spec.prompt.contains("HYP BODY"));
+}
+
+#[test]
+fn parse_intractable_reads_flag() {
+    assert!(!parse_intractable(
+        "role: eval-designer\nflagged_intractable: false\n"
+    ));
+    assert!(parse_intractable(
+        "role: eval-designer\nflagged_intractable: true\n"
+    ));
+    // Missing field defaults to false.
+    assert!(!parse_intractable("role: eval-designer\n"));
+}
+
+#[tokio::test]
+async fn eval_designers_one_per_survivor_and_gates() {
+    let (swarm, hyps, run_dir) = redteam_loop_fixture(2);
+    let survivors: Vec<Hypothesis> = hyps;
+    // 2 eval-designers x 4 turns = 8 turns; neither intractable.
+    let turns: Vec<Vec<StreamEvent>> = {
+        let mut t = evaldesign_turns(false);
+        t.extend(evaldesign_turns(false));
+        t
+    };
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let mut swarm = swarm;
+    let res = run_eval_designers(
+        &run_dir,
+        "SPEC",
+        &survivors,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+        &mut swarm,
+    )
+    .await
+    .unwrap();
+    assert_eq!(res.eval_dirs.len(), 2);
+    assert!(res.eval_dirs[0].ends_with("eval-designer-1"));
+    assert!(res.eval_dirs[1].ends_with("eval-designer-2"));
+    assert_eq!(
+        res.phase_workers,
+        vec![
+            ("hypothesis-smith-1".to_string(), "passed".to_string()),
+            ("hypothesis-smith-2".to_string(), "passed".to_string()),
+        ]
+    );
+    assert!(swarm.escalations.is_empty());
+}
+
+#[tokio::test]
+async fn eval_designer_intractable_is_escalated_but_kept_in_dirs() {
+    let (swarm, hyps, run_dir) = redteam_loop_fixture(1);
+    let survivors: Vec<Hypothesis> = hyps;
+    let fake = Arc::new(FakeProvider::new("fake", evaldesign_turns(true)));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let mut swarm = swarm;
+    let res = run_eval_designers(
+        &run_dir,
+        "SPEC",
+        &survivors,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+        &mut swarm,
+    )
+    .await
+    .unwrap();
+    assert_eq!(res.eval_dirs.len(), 1); // still included for the audit trail
+    assert_eq!(
+        res.phase_workers,
+        vec![("hypothesis-smith-1".to_string(), "intractable".to_string())]
+    );
+    assert_eq!(swarm.escalations.len(), 1);
+    assert_eq!(swarm.escalations[0].worker, "hypothesis-smith-1");
+    assert!(swarm.escalations[0].reason.contains("intractable"));
+}
+
+#[tokio::test]
+async fn eval_designers_halt_on_gate_escalation() {
+    let (swarm, hyps, run_dir) = redteam_loop_fixture(1);
+    let survivors: Vec<Hypothesis> = hyps;
+    let turns: Vec<Vec<StreamEvent>> = vec![final_turn("nothing written")];
+    let fake = Arc::new(FakeProvider::new("fake", turns));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let mut swarm = swarm;
+    let err = run_eval_designers(
+        &run_dir,
+        "SPEC",
+        &survivors,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+        &mut swarm,
+    )
+    .await
+    .expect_err("should escalate");
+    match err {
+        OrchestratorError::Escalated(names) => {
+            assert_eq!(names, vec!["hypothesis-smith-1".to_string()])
+        }
+        other => panic!("expected Escalated, got {other:?}"),
+    }
+}
