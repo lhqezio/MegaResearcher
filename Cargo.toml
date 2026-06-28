@@ -12,6 +12,7 @@ members = [
     "crates/cli",
     "crates/mr-cli",
     "crates/research",
+    "crates/mr-tui",
 ]
 
 [workspace.package]
@@ -114,6 +115,7 @@ claurst-commands = { path = "crates/commands" }
 claurst-mcp = { path = "crates/mcp" }
 claurst-plugins = { path = "crates/plugins" }
 megaresearcher-research = { path = "crates/research" }
+mr-tui = { path = "crates/mr-tui" }
 # NOTE: claurst-acp, claurst-bridge, claurst-buddy aliases are REMOVED (crates deleted).
 # NOTE: the cli crate's package name is `claurst` (no claurst-cli alias exists in claurst either).
 # NOTE: the research crate's package name is `megaresearcher-research` (lib `megaresearcher_research`); the alias key matches the package name.

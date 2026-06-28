@@ -2569,6 +2569,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "mr-tui"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "claurst-api",
+ "claurst-core",
+ "crossterm 0.29.0",
+ "futures",
+ "megaresearcher-research",
+ "ratatui",
+ "serde",
+ "tempfile",
+ "tokio",
+ "toml",
+]
+
+[[package]]
 name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

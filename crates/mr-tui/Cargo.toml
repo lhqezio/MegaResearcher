@@ -1,0 +1,27 @@
+[package]
+name = "mr-tui"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0"
+
+[lib]
+name = "mr_tui"
+path = "src/lib.rs"
+
+[dependencies]
+megaresearcher-research = { workspace = true }
+claurst-core = { workspace = true }
+claurst-api = { workspace = true }
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+futures = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+futures = { workspace = true }
+tempfile = { workspace = true }
