@@ -206,7 +206,8 @@ pub async fn verify_run(
                 let resolved = matches!(
                     spot_check_one(caller.as_ref(), &args).await,
                     Ok(CallToolResult {
-                        is_error: false, ..
+                        is_error: false,
+                        ..
                     })
                 );
                 spot_checks.push(SpotCheck {
