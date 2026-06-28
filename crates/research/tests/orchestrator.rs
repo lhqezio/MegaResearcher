@@ -14,6 +14,7 @@ use megaresearcher_research::orchestrator::preflight::{
 };
 use megaresearcher_research::state::run_tree::{create_run_tree, run_dir};
 use megaresearcher_research::state::swarm_state::SwarmState;
+use megaresearcher_research::state::swarm_state::Verdict;
 
 fn write_agents(dir: &Path, roles: &[&str]) {
     for r in roles {
@@ -1204,6 +1205,39 @@ async fn redteam_loop_approves_on_first_round() {
     assert!(swarm.escalations.is_empty());
     assert_eq!(swarm.retry_counts.get("hypothesis-smith-1"), None);
 }
+#[tokio::test]
+async fn redteam_loop_persists_approved_hypothesis_node() {
+    let (swarm, hyps, run_dir) = redteam_loop_fixture(1);
+    let fake = Arc::new(FakeProvider::new("fake", redteam_turns("APPROVE")));
+    let provider = fake.clone() as Arc<dyn LlmProvider>;
+    let mut swarm = swarm;
+    run_redteam_loop(
+        &run_dir,
+        "SPEC",
+        hyps,
+        &fixture_agents_dir(),
+        provider,
+        "fake-model",
+        1,
+        &mut swarm,
+        &[],
+    )
+    .await
+    .unwrap();
+    let rt_phase = swarm
+        .phases
+        .iter()
+        .find(|p| p.name == "red-team")
+        .expect("red-team phase present");
+    assert_eq!(rt_phase.hypotheses.len(), 1);
+    let node = &rt_phase.hypotheses[0];
+    assert_eq!(node.id, "hypothesis-smith-1");
+    assert_eq!(node.status, "approved");
+    assert!(node.kill_reason.is_none());
+    assert_eq!(node.rounds.len(), 1);
+    assert_eq!(node.rounds[0].critique, Verdict::Approve);
+    assert!(!node.rounds[0].revised);
+}
 
 #[tokio::test]
 async fn redteam_loop_revises_then_approves() {
@@ -1271,6 +1305,26 @@ async fn redteam_loop_kills_on_kill_verdict() {
     assert_eq!(swarm.escalations.len(), 1);
     assert_eq!(swarm.escalations[0].worker, "hypothesis-smith-1");
     assert!(swarm.escalations[0].reason.contains("KILL"));
+
+    // Phase 6b persistence: the red-team Phase carries a killed HypothesisNode
+    // with the kill reason + the round verdict sequence.
+    let rt_phase = swarm
+        .phases
+        .iter()
+        .find(|p| p.name == "red-team")
+        .expect("red-team phase present");
+    assert_eq!(rt_phase.hypotheses.len(), 1);
+    let node = &rt_phase.hypotheses[0];
+    assert_eq!(node.id, "hypothesis-smith-1");
+    assert_eq!(node.status, "killed");
+    assert_eq!(
+        node.kill_reason.as_deref(),
+        Some("red-team KILL (irrecoverable)")
+    );
+    assert_eq!(node.rounds.len(), 1);
+    assert_eq!(node.rounds[0].round, 1);
+    assert_eq!(node.rounds[0].critique, Verdict::Reject);
+    assert!(!node.rounds[0].revised);
 }
 
 #[tokio::test]

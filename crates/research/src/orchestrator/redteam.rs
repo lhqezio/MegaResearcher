@@ -16,6 +16,7 @@ use crate::orchestrator::hypothesis::{redispatch_smith_revision, Hypothesis};
 use crate::orchestrator::verdict::{parse_redteam_verdict_file, RedTeamVerdict};
 use crate::orchestrator::OrchestratorError;
 use crate::state::swarm_state::SwarmState;
+use crate::state::swarm_state::{HypothesisNode, RoundVerdict, Verdict};
 use crate::worker_tools::Tool;
 
 /// Cap on red-team revisions before a hypothesis is escalated.
@@ -74,6 +75,7 @@ pub async fn run_redteam_loop(
     let mut redteam_dirs = Vec::new();
 
     for hyp in hypotheses.into_iter() {
+        let mut rounds: Vec<RoundVerdict> = Vec::new();
         let n = hyp
             .name
             .trim_start_matches("hypothesis-smith-")
@@ -96,6 +98,17 @@ pub async fn run_redteam_loop(
                     "exceeded 3 red-team revisions",
                     round,
                 );
+                upsert_hypothesis_node(
+                    swarm,
+                    HypothesisNode {
+                        id: hyp.name.clone(),
+                        label: hyp.gap.statement.clone(),
+                        status: "killed".to_string(),
+                        rounds: std::mem::take(&mut rounds),
+                        kill_reason: Some("exceeded 3 red-team revisions".to_string()),
+                    },
+                );
+                let _ = crate::orchestrator::preflight::write_swarm(swarm, run_dir);
                 killed.push(hyp.name.clone());
                 break;
             }
@@ -132,6 +145,17 @@ pub async fn run_redteam_loop(
                     "red-team missing artifacts after retry",
                     round,
                 );
+                upsert_hypothesis_node(
+                    swarm,
+                    HypothesisNode {
+                        id: hyp.name.clone(),
+                        label: hyp.gap.statement.clone(),
+                        status: "killed".to_string(),
+                        rounds: std::mem::take(&mut rounds),
+                        kill_reason: Some("red-team missing artifacts after retry".to_string()),
+                    },
+                );
+                let _ = crate::orchestrator::preflight::write_swarm(swarm, run_dir);
                 killed.push(hyp.name.clone());
                 redteam_dirs.push(rt_dir);
                 break;
@@ -142,20 +166,57 @@ pub async fn run_redteam_loop(
             redteam_dirs.push(rt_dir.clone());
             match verdict {
                 Some(RedTeamVerdict::Approve) => {
+                    rounds.push(RoundVerdict {
+                        round,
+                        critique: Verdict::Approve,
+                        revised: false,
+                    });
+                    upsert_hypothesis_node(
+                        swarm,
+                        HypothesisNode {
+                            id: hyp.name.clone(),
+                            label: hyp.gap.statement.clone(),
+                            status: "approved".to_string(),
+                            rounds: std::mem::take(&mut rounds),
+                            kill_reason: None,
+                        },
+                    );
+                    let _ = crate::orchestrator::preflight::write_swarm(swarm, run_dir);
                     survivors.push(hyp);
                     break;
                 }
                 Some(RedTeamVerdict::Kill) => {
+                    rounds.push(RoundVerdict {
+                        round,
+                        critique: Verdict::Reject,
+                        revised: false,
+                    });
                     crate::orchestrator::preflight::add_escalation(
                         swarm,
                         &hyp.name,
                         "red-team KILL (irrecoverable)",
                         round,
                     );
+                    upsert_hypothesis_node(
+                        swarm,
+                        HypothesisNode {
+                            id: hyp.name.clone(),
+                            label: hyp.gap.statement.clone(),
+                            status: "killed".to_string(),
+                            rounds: std::mem::take(&mut rounds),
+                            kill_reason: Some("red-team KILL (irrecoverable)".to_string()),
+                        },
+                    );
+                    let _ = crate::orchestrator::preflight::write_swarm(swarm, run_dir);
                     killed.push(hyp.name.clone());
                     break;
                 }
                 Some(RedTeamVerdict::Reject { revision: _ }) => {
+                    rounds.push(RoundVerdict {
+                        round,
+                        critique: Verdict::Reject,
+                        revised: true,
+                    });
                     revision_count += 1;
                     swarm.retry_counts.insert(hyp.name.clone(), revision_count);
                     let critique = fs::read_to_string(rt_dir.join("output.md"))
@@ -170,7 +231,18 @@ pub async fn run_redteam_loop(
                         extra_tools,
                     )
                     .await?;
-                    // Loop: next round dispatches red-team again on the revised hypothesis.
+                    // Persist the in-progress rounds so the TUI sees them live.
+                    upsert_hypothesis_node(
+                        swarm,
+                        HypothesisNode {
+                            id: hyp.name.clone(),
+                            label: hyp.gap.statement.clone(),
+                            status: "alive".to_string(),
+                            rounds: rounds.clone(),
+                            kill_reason: None,
+                        },
+                    );
+                    let _ = crate::orchestrator::preflight::write_swarm(swarm, run_dir);
                     continue;
                 }
                 None => {
@@ -180,6 +252,17 @@ pub async fn run_redteam_loop(
                         "red-team produced no parseable verdict",
                         round,
                     );
+                    upsert_hypothesis_node(
+                        swarm,
+                        HypothesisNode {
+                            id: hyp.name.clone(),
+                            label: hyp.gap.statement.clone(),
+                            status: "killed".to_string(),
+                            rounds: std::mem::take(&mut rounds),
+                            kill_reason: Some("red-team produced no parseable verdict".to_string()),
+                        },
+                    );
+                    let _ = crate::orchestrator::preflight::write_swarm(swarm, run_dir);
                     killed.push(hyp.name.clone());
                     break;
                 }
@@ -192,4 +275,29 @@ pub async fn run_redteam_loop(
         redteam_dirs,
         killed,
     })
+}
+
+/// Insert or replace the `HypothesisNode` for `id` in the red-team `Phase`.
+/// If the red-team Phase is absent from `swarm`, it is appended. Additive: the
+/// survivors/killed/escalations logic is untouched — this only persists the
+/// audit-trail node the TUI renders.
+fn upsert_hypothesis_node(swarm: &mut SwarmState, node: HypothesisNode) {
+    let phase = swarm.phases.iter_mut().find(|p| p.name == "red-team");
+    let phase = match phase {
+        Some(p) => p,
+        None => {
+            swarm.phases.push(crate::state::swarm_state::Phase {
+                name: "red-team".to_string(),
+                status: "running".to_string(),
+                workers: Vec::new(),
+                hypotheses: Vec::new(),
+            });
+            swarm.phases.last_mut().unwrap()
+        }
+    };
+    if let Some(existing) = phase.hypotheses.iter_mut().find(|h| h.id == node.id) {
+        *existing = node;
+    } else {
+        phase.hypotheses.push(node);
+    }
 }
