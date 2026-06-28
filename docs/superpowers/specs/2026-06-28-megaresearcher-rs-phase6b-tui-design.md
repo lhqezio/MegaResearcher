@@ -13,13 +13,14 @@ The verb, in plain words: **watch a room of researchers tear your question apart
 
 ## 1. Scope
 
-### 1.1 In scope for 6b (all four surfaces)
+### 1.1 In scope for 6b (all surfaces)
 
 1. **Start** — one input, a ghosted example. No wizard, no target picker, no onboarding tour.
 2. **Converge** — brainstorm → spec → plan as one flowing surface: the model asks 2–3 sharp questions, the user answers, it converges; spec and plan cards appear with in-place `[✓]` approval. Reuses 6a's `drive_session` engine.
 3. **Run** — the tree that grows: phases appear as the previous completes; each worker a node with status (running/done/escalated/killed); the red-team loop animates on hypothesis nodes (`smith → critique → revise ↻`, `round N/3`); killed hypotheses dim with their one-line kill reason; one cost number top-right; an escalation strip that appears only when an escalation exists and is adjudicated inline.
-4. **Artifact** — on synthesis completion, the tree slides to a side rail as provenance and the research direction takes the screen: rendered `output.md`, surviving hypotheses as expandable cards (mechanism / predicted outcome / falsification / experimental design), rejected hypotheses folded at the bottom with their lessons.
+4. **Artifact** — on synthesis completion, the tree slides to a side rail as provenance and the research direction takes the screen: rendered `output.md`, surviving hypotheses as expandable cards (mechanism / predicted outcome / falsification / experimental design), rejected hypotheses folded at the bottom with its lessons.
 5. **Past runs** — `mr` with no args when runs exist: a list by date + topic, each with its headline surviving hypothesis; one tap reopens artifact + tree.
+6. **Settings** — a structured editor for the config file (see §4.6). Added by amendment; overrides the original "no settings screen" non-goal. The file remains the source of truth — the screen edits it, it does not parallel it — so headless `mr` and the TUI agree on one store. This also resolves the Phase 6a Important finding (commands failing without a configured provider/key).
 
 ### 1.2 Deferred to Phase 8
 
@@ -29,7 +30,6 @@ The verb, in plain words: **watch a room of researchers tear your question apart
 
 ### 1.3 Non-goals (explicit, to prevent scope creep)
 
-- No settings screen. Config lives in a file; `max_parallel`/provider = defaults + advanced flags.
 - No token-usage dashboard with charts. One live number on the run screen.
 - No modal celebration when a phase completes. The tree growing is the feedback.
 - No onboarding tour. The first screen is the input.
@@ -174,9 +174,35 @@ When synthesis completes, the tree slides to a side rail as provenance and the d
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### 4.6 Settings — a structured editor for the config file
+
+Added by amendment. Reachable from a keybinding on any surface (e.g. `s`) and shown automatically on first run when no provider/key is configured. One screen, no tabs — grouped sections, inline editing, opinionated defaults shown. The API key is a masked input. `test connection` validates the provider+key before save. **Save writes to the config file** (`~/.config/mr/config.toml`); the file is the source of truth, the screen is its editor — so headless `mr` and the TUI read the same store. This is the one surface where "options" are inherent; the philosophy is kept alive by exposing only the values that actually matter and pre-filling every one with a default.
+
+```
+┌─ settings ───────────────────────────────────────────────────────────────────┐
+│  provider          Anthropic ▸                          [ test connection ]    │
+│  api key           sk-ant-••••••••••••••••••••••••••••••                        │
+│  model             claude-sonnet-4-6 ▸                                         │
+│                                                                              │
+│  run                                                                             │
+│  max parallel      4 ▸                                                          │
+│  on escalation     pause ▸          ( continue · pause · fail )                 │
+│  mcp (ml-intern)   on ▸                                                         │
+│                                                                              │
+│  experiments                                                                      │
+│  cost ceiling      $5 sandbox · $5 api ▸                                       │
+│                                                                              │
+│  theme            research (dark) ▸                                            │
+│                                                                              │
+│  [ save ]   [ cancel ]            saved to ~/.config/mr/config.toml             │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+Fields exposed: `provider`, `api key` (masked), `model`, `max_parallel`, `on_escalate`, `mcp` (ml-intern subprocess on/off), experiments `cost ceiling` (paper chain), `theme`. Each pre-filled with its default. No settings tree, no tabs, no plugin/extension surface. Changes take effect on the next run (the orchestrator reads the file at run start; the TUI re-reads on save).
+
 ## 5. Interaction model (Jobs)
 
-- **One default, no options** on the start screen. The novelty target is conversed, not picked from a dropdown.
+- **One default, no options** on the start screen. The novelty target is conversed, not picked from a dropdown. (The settings screen, §4.6, is the one explicit exception — options are inherent there, but every field is pre-filled with a default and only values that matter are exposed.)
 - **Animation as explanation**: the tree growing teaches the phase order; the red-team `↻` teaches the critique loop; the greying teaches "rejected ideas are preserved."
 - **No modal takeovers.** Escalations adjudicate inline. Phase completion = the tree grows, nothing else.
 - **Direct manipulation.** Tap a node → expand its output. Tap a surviving hypothesis → expand its cards. Tap a kill reason → read the red-team critique that produced it.
@@ -196,6 +222,7 @@ crates/mr-tui/src/
     run.rs          — Run: renders SwarmState as the growing tree + cost + escalation strip; watches swarm-state.yaml
     artifact.rs     — Artifact: renders output.md + surviving expandable cards + rejected fold
     past.rs         — Past runs: lists docs/research/runs/
+    settings.rs     — Settings: structured editor for the config file (provider/key/model/max_parallel/on_escalate/mcp/cost-ceiling/theme); masked key input, test-connection, save→file
   widget/
     tree.rs         — phases→workers→hypothesis sub-nodes (red-team verdict sequence + greyed kill)  ← the signature
     inline_chat.rs  — the bounded 3-exchange converge widget
@@ -216,6 +243,7 @@ The converge surface reuses 6a's `drive_session(&mut session, io, gates, approve
 - **Run**: spawn the orchestrator on a tokio task (as 6a's `execute::run_with` does); the run surface watches `swarm-state.yaml` (250ms poll, matching 6a — no new dep) and renders diffs. Escalations route through `TuiEscalationHandler` → the inline strip, blocking on `continue`/`fail`.
 - **Artifact**: on synthesis done, read `output.md` + the hypothesis nodes from state → cards + rejected fold.
 - **Past runs**: enumerate `runs/`, read each `output.md` headline + surviving hypothesis.
+- **Settings**: read the config file (`~/.config/mr/config.toml`) into the editor on open; `test connection` validates provider+key against the provider registry; `save` writes the file back. The orchestrator and headless `mr` read the same file at run start, so a save takes effect on the next run. On first run with no provider/key configured, the settings screen opens automatically (this resolves the Phase 6a Important finding).
 
 ## 8. The swarm-state extension (the one contract touch — additive)
 
@@ -255,6 +283,7 @@ pub struct RoundVerdict {
 - **`TuiUserIo` test**: `drive_session` with 6a's FakeProvider + a scripted conversation buffer → spec/plan cards appear, gates pass.
 - **SwarmState serde round-trip** + the 52 orchestrator tests still green (the determinism guard).
 - **The make-or-break integration test**: a fake-provider run (6a's `run_turns`, including a killed hypothesis with a kill reason) → drive the TUI app against the produced `swarm-state.yaml` → assert the run surface renders the tree with the greyed kill. This single test encodes the thesis.
+- **Settings screen test**: open the editor against a fixture config file → edit `max_parallel`/`on_escalate` → save → assert the file is rewritten with the new values and headless `mr` reads them back. Assert the API key field renders masked. Assert the screen auto-opens when no provider/key is configured (first-run).
 
 ## 11. Open questions deferred to the implementation plan
 
