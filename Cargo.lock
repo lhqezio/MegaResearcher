@@ -2556,12 +2556,15 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "chrono",
  "clap",
  "claurst-api",
  "claurst-core",
+ "futures",
  "megaresearcher-research",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
 ]
 
