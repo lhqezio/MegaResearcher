@@ -96,6 +96,7 @@ fn passing_swarm() -> SwarmState {
                 name: "literature-scout-1".into(),
                 status: "done".into(),
             }],
+            hypotheses: vec![],
         }],
         escalations: vec![],
         retry_counts: HashMap::new(),

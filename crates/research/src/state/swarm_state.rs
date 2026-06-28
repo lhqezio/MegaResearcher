@@ -40,6 +40,8 @@ pub struct Phase {
     pub status: String,
     #[serde(default)]
     pub workers: Vec<Worker>,
+    #[serde(default)]
+    pub hypotheses: Vec<HypothesisNode>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -54,6 +56,33 @@ pub struct Escalation {
     pub reason: String,
     #[serde(default)]
     pub retry_count: u32,
+}
+
+/// A red-team verdict on one round of a hypothesis.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Verdict {
+    Approve,
+    Reject,
+}
+
+/// One round of the red-team critique loop for a hypothesis.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RoundVerdict {
+    pub round: u32,
+    pub critique: Verdict,
+    pub revised: bool,
+}
+
+/// A hypothesis as persisted for the audit-trail tree (spec §8). Additive +
+/// serde-defaulted empty so pre-6b `swarm-state.yaml` files deserialize unchanged.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HypothesisNode {
+    pub id: String,
+    pub label: String,
+    pub status: String,
+    #[serde(default)]
+    pub rounds: Vec<RoundVerdict>,
+    pub kill_reason: Option<String>,
 }
 
 impl SwarmState {

@@ -87,6 +87,7 @@ pub fn build_initial_swarm_state(
                 name: name.to_string(),
                 status,
                 workers: Vec::new(),
+                hypotheses: Vec::new(),
             }
         })
         .collect();
