@@ -113,10 +113,43 @@ fn parse_execute(args: &[&str]) -> anyhow::Result<Command> {
     })
 }
 
-/// Entry point. Parses args and dispatches.
+/// Top-level usage string. Lists subcommands with one-line descriptions.
+/// Descriptions for `brainstorm`/`spec`/`plan` come from the embedded flow
+/// assets' `description` frontmatter; the rest are static one-liners.
+pub fn usage() -> String {
+    use megaresearcher_research::flows::load_embedded;
+    let brain = load_embedded("brainstorm").description;
+    let spec = load_embedded("spec").description;
+    let plan = load_embedded("plan").description;
+    format!(
+        "mr — MegaResearcher research-swarm CLI\n\n\
+         Usage: mr <subcommand> [args]\n\n\
+         Subcommands:\n  \
+         init <question>       Brainstorm → spec → plan in one session\n  \
+         brainstorm <topic>    {brain}\n  \
+         spec <topic>          {spec}\n  \
+         plan <topic>          {plan}\n  \
+         execute [plan]        Run the swarm on a plan (flags: --paper --headless --no-mcp --on-escalate=continue|pause|fail)\n  \
+         verify <run-dir>     Re-run the deterministic post-run checker on a completed run\n  \
+         watch [run-dir]       (TUI arrives in Phase 6b)\n  \
+         list                  List past runs under docs/research/runs/\n\n\
+         Flags: --help / -h shows this message.\n"
+    )
+}
+
+/// Entry point. Parses args and dispatches. Intercepts `--help`/`-h`/`help`
+/// before `parse_args` so help works without an API key or provider.
 pub async fn run_cli(args: Vec<String>) -> anyhow::Result<()> {
     use anyhow::Context as _;
     let args_refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    // args[0] is the program name; the subcommand slot is args[1].
+    if args_refs
+        .get(1)
+        .is_some_and(|s| matches!(*s, "--help" | "-h" | "help"))
+    {
+        println!("{}", usage());
+        return Ok(());
+    }
     let cmd = parse_args(&args_refs).context("bad args")?;
     let cwd = std::env::current_dir()?;
     let provider = prelude::resolve_provider(&cwd, None, None, None)
