@@ -49,6 +49,7 @@ pub struct App {
         tokio::task::JoinHandle<anyhow::Result<megaresearcher_research::phases::DriveOutcome>>,
     >,
     pub run_state: Option<crate::surface::run::RunState>,
+    pub artifact: Option<crate::surface::artifact::ArtifactState>,
 }
 
 impl App {
@@ -66,6 +67,7 @@ impl App {
             provider,
             converge: None,
             run_state: None,
+            artifact: None,
             converge_task: None,
         }
     }
@@ -156,8 +158,18 @@ impl App {
                     crate::surface::run::render_run(frame, frame.area(), rs, &self.theme);
                 }
             }
+            Surface::Artifact => {
+                if let Some(art) = self.artifact.as_ref() {
+                    crate::surface::artifact::render_artifact(
+                        frame,
+                        frame.area(),
+                        art,
+                        &self.theme,
+                    );
+                }
+            }
             _ => {
-                // Placeholder until the surface modules land (T9-T12).
+                // Placeholder until the remaining surfaces land (T11-T12).
                 frame.render_widget(
                     ratatui::widgets::Paragraph::new(format!("surface: {:?}", self.surface)).block(
                         ratatui::widgets::Block::default()
@@ -227,6 +239,11 @@ impl App {
                         _ = &mut done => {
                             if let Some(rs) = self.run_state.as_mut() {
                                 rs.orch_task = None;
+                                self.artifact = Some(
+                                    crate::surface::artifact::ArtifactState::from_run_dir(
+                                        &rs.run_dir,
+                                    ),
+                                );
                             }
                             self.surface = Surface::Artifact;
                         }
