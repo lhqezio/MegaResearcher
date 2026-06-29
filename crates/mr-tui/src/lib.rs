@@ -23,6 +23,6 @@ use std::path::Path;
 pub async fn run(cwd: &Path) -> anyhow::Result<()> {
     let terminal = bootstrap::setup_terminal()?;
     let mut guard = guard::TerminalGuard::new(terminal);
-    let mut app = app::App::new(cwd.to_path_buf());
+    let mut app = app::App::new(cwd.to_path_buf(), None);
     app.run(guard.inner_mut()).await
 }

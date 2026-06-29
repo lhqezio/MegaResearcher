@@ -3,7 +3,7 @@ use mr_tui::app::{App, AppEvent, Surface};
 
 #[test]
 fn start_submits_question_to_converge() {
-    let mut app = App::new(std::path::PathBuf::from("/tmp"));
+    let mut app = App::new(std::path::PathBuf::from("/tmp"), None);
     app.surface = Surface::Start;
     app.question = "can SAEs surface causal circuits?".into();
     let ev = app.handle_key(KeyEvent::new_with_kind(
@@ -18,7 +18,7 @@ fn start_submits_question_to_converge() {
 
 #[test]
 fn quit_on_q_or_ctrl_c() {
-    let mut app = App::new(std::path::PathBuf::from("/tmp"));
+    let mut app = App::new(std::path::PathBuf::from("/tmp"), None);
     let ev_q = app.handle_key(KeyEvent::new_with_kind(
         KeyCode::Char('q'),
         KeyModifiers::NONE,
@@ -35,7 +35,7 @@ fn quit_on_q_or_ctrl_c() {
 
 #[test]
 fn s_key_goes_to_settings() {
-    let mut app = App::new(std::path::PathBuf::from("/tmp"));
+    let mut app = App::new(std::path::PathBuf::from("/tmp"), None);
     app.surface = Surface::Start;
     let ev = app.handle_key(KeyEvent::new_with_kind(
         KeyCode::Char('s'),
@@ -49,7 +49,7 @@ fn s_key_goes_to_settings() {
 fn start_renders_ghosted_example() {
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
-    let app = App::new(std::path::PathBuf::from("/tmp"));
+    let app = App::new(std::path::PathBuf::from("/tmp"), None);
     let mut terminal = Terminal::new(TestBackend::new(80, 10)).unwrap();
     terminal.draw(|f| app.render(f)).unwrap();
     let buf = terminal.backend().buffer().clone();
