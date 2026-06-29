@@ -48,6 +48,7 @@ pub struct App {
     pub converge_task: Option<
         tokio::task::JoinHandle<anyhow::Result<megaresearcher_research::phases::DriveOutcome>>,
     >,
+    pub run_state: Option<crate::surface::run::RunState>,
 }
 
 impl App {
@@ -64,6 +65,7 @@ impl App {
             theme: for_theme("research"),
             provider,
             converge: None,
+            run_state: None,
             converge_task: None,
         }
     }
@@ -94,7 +96,40 @@ impl App {
                 self.question.pop();
                 AppEvent::None
             }
+            KeyCode::Char('c') if self.surface == Surface::Run && self.run_pending_escalation() => {
+                self.run_respond(
+                    megaresearcher_research::orchestrator::escalation::EscalationVerdict::Continue,
+                );
+                AppEvent::None
+            }
+            KeyCode::Char('f') if self.surface == Surface::Run && self.run_pending_escalation() => {
+                self.run_respond(
+                    megaresearcher_research::orchestrator::escalation::EscalationVerdict::Fail,
+                );
+                AppEvent::None
+            }
             _ => AppEvent::None,
+        }
+    }
+
+    /// True when a Run surface escalation is awaiting the user's verdict.
+    fn run_pending_escalation(&self) -> bool {
+        self.run_state
+            .as_ref()
+            .is_some_and(|rs| rs.pending_escalation.is_some())
+    }
+
+    /// Send the user's verdict back to the orchestrator's escalation
+    /// handler and clear the pending escalation. No-op if none pending.
+    fn run_respond(
+        &mut self,
+        verdict: megaresearcher_research::orchestrator::escalation::EscalationVerdict,
+    ) {
+        if let Some(rs) = self.run_state.as_mut() {
+            if let Some(tx) = rs.verdict_responder.take() {
+                let _ = tx.send(verdict);
+            }
+            rs.pending_escalation = None;
         }
     }
 
@@ -114,6 +149,11 @@ impl App {
                         cs.plan_approved,
                         &self.theme,
                     );
+                }
+            }
+            Surface::Run => {
+                if let Some(rs) = self.run_state.as_ref() {
+                    crate::surface::run::render_run(frame, frame.area(), rs, &self.theme);
                 }
             }
             _ => {
@@ -149,6 +189,49 @@ impl App {
             if let Some(cs) = self.converge.as_mut() {
                 while let Ok(msg) = cs.handle.print_rx.try_recv() {
                     cs.conversation.push(msg);
+                }
+            }
+            // Run surface: drain a pending escalation non-blocking, re-read
+            // swarm-state.yaml every ~5 frames (≈250ms), and probe the
+            // orchestrator task for completion (-> Artifact). Drawn next.
+            if self.surface == Surface::Run {
+                if let Some(rs) = self.run_state.as_mut() {
+                    // Pick up an escalation if one arrived and none is pending.
+                    if rs.pending_escalation.is_none() {
+                        if let Ok((esc, tx)) = rs.escalation_rx.try_recv() {
+                            rs.pending_escalation = Some(esc);
+                            rs.verdict_responder = Some(tx);
+                        }
+                    }
+                    // Re-read swarm-state.yaml every ~5 frames so the tree
+                    // re-renders as the run progresses.
+                    if self.frame_count.is_multiple_of(5) {
+                        let swarm_path = rs.run_dir.join("swarm-state.yaml");
+                        if swarm_path.exists() {
+                            if let Ok(swarm) =
+                                megaresearcher_research::state::swarm_state::SwarmState::read(
+                                    &swarm_path,
+                                )
+                            {
+                                rs.swarm = Some(swarm);
+                            }
+                        }
+                    }
+                }
+                // Non-blocking probe of the orchestrator task: on
+                // completion, transition to the Artifact surface.
+                if let Some(task) = self.run_state.as_mut().and_then(|rs| rs.orch_task.as_mut()) {
+                    let mut done = std::pin::Pin::new(task).fuse();
+                    tokio::select! {
+                        biased;
+                        _ = &mut done => {
+                            if let Some(rs) = self.run_state.as_mut() {
+                                rs.orch_task = None;
+                            }
+                            self.surface = Surface::Artifact;
+                        }
+                        _ = tokio::time::sleep(std::time::Duration::from_millis(0)) => {}
+                    }
                 }
             }
             terminal.draw(|f| self.render(f))?;

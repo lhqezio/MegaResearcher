@@ -8,6 +8,7 @@
 pub mod app;
 pub mod bootstrap;
 pub mod cost;
+pub mod escalation;
 pub mod figures;
 pub mod guard;
 pub mod io;
