@@ -2581,6 +2581,7 @@ dependencies = [
  "megaresearcher-research",
  "ratatui",
  "serde",
+ "serde_json",
  "tempfile",
  "tokio",
  "toml",

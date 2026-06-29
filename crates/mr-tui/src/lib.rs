@@ -9,6 +9,7 @@ pub mod bootstrap;
 pub mod figures;
 pub mod guard;
 pub mod theme;
+pub mod widget;
 
 use std::path::Path;
 
