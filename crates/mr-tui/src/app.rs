@@ -50,6 +50,7 @@ pub struct App {
     >,
     pub run_state: Option<crate::surface::run::RunState>,
     pub artifact: Option<crate::surface::artifact::ArtifactState>,
+    pub past: Option<crate::surface::past::PastState>,
 }
 
 impl App {
@@ -68,6 +69,7 @@ impl App {
             converge: None,
             run_state: None,
             artifact: None,
+            past: None,
             converge_task: None,
         }
     }
@@ -110,10 +112,38 @@ impl App {
                 );
                 AppEvent::None
             }
+            KeyCode::Up if self.surface == Surface::Past => {
+                if let Some(ps) = self.past.as_mut() {
+                    if ps.selected > 0 {
+                        ps.selected -= 1;
+                    }
+                }
+                AppEvent::None
+            }
+            KeyCode::Down if self.surface == Surface::Past => {
+                if let Some(ps) = self.past.as_mut() {
+                    if ps.selected + 1 < ps.runs.len() {
+                        ps.selected += 1;
+                    }
+                }
+                AppEvent::None
+            }
+            KeyCode::Enter if self.surface == Surface::Past => {
+                if let Some(run_dir) = self
+                    .past
+                    .as_ref()
+                    .and_then(|ps| ps.runs.get(ps.selected).map(|r| r.run_dir.clone()))
+                {
+                    self.artifact = Some(crate::surface::artifact::ArtifactState::from_run_dir(
+                        &run_dir,
+                    ));
+                    self.surface = Surface::Artifact;
+                }
+                AppEvent::None
+            }
             _ => AppEvent::None,
         }
     }
-
     /// True when a Run surface escalation is awaiting the user's verdict.
     fn run_pending_escalation(&self) -> bool {
         self.run_state
@@ -166,6 +196,11 @@ impl App {
                         art,
                         &self.theme,
                     );
+                }
+            }
+            Surface::Past => {
+                if let Some(ps) = self.past.as_ref() {
+                    crate::surface::past::render_past(frame, frame.area(), ps, &self.theme);
                 }
             }
             _ => {
