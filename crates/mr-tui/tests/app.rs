@@ -49,7 +49,8 @@ fn s_key_goes_to_settings() {
 fn start_renders_ghosted_example() {
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
-    let app = App::new(std::path::PathBuf::from("/tmp"), None);
+    let mut app = App::new(std::path::PathBuf::from("/tmp"), None);
+    app.surface = Surface::Start;
     let mut terminal = Terminal::new(TestBackend::new(80, 10)).unwrap();
     terminal.draw(|f| app.render(f)).unwrap();
     let buf = terminal.backend().buffer().clone();

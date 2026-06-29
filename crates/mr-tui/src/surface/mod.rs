@@ -5,4 +5,5 @@
 pub mod artifact;
 pub mod past;
 pub mod run;
+pub mod settings;
 pub mod start;

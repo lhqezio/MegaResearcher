@@ -7,6 +7,7 @@
 
 pub mod app;
 pub mod bootstrap;
+pub mod config;
 pub mod cost;
 pub mod escalation;
 pub mod figures;

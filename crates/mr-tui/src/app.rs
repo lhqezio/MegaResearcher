@@ -51,6 +51,7 @@ pub struct App {
     pub run_state: Option<crate::surface::run::RunState>,
     pub artifact: Option<crate::surface::artifact::ArtifactState>,
     pub past: Option<crate::surface::past::PastState>,
+    pub settings: Option<crate::surface::settings::SettingsState>,
 }
 
 impl App {
@@ -58,8 +59,24 @@ impl App {
         cwd: PathBuf,
         provider: Option<(Arc<dyn claurst_api::LlmProvider>, String)>,
     ) -> Self {
+        // First-run detection: if no provider/key is configured in the
+        // TOML store and the caller didn't pass a provider, auto-open the
+        // Settings surface so the user can fill in credentials. This
+        // resolves the 6a Important finding.
+        let cfg = crate::config::MrConfig::load();
+        let needs_settings = cfg.needs_provider_key() && provider.is_none();
+        let surface = if needs_settings {
+            Surface::Settings
+        } else {
+            Surface::Start
+        };
+        let settings = if needs_settings {
+            Some(crate::surface::settings::SettingsState::from_config(cfg))
+        } else {
+            None
+        };
         Self {
-            surface: Surface::Start,
+            surface,
             question: String::new(),
             cwd,
             should_exit: false,
@@ -71,6 +88,7 @@ impl App {
             artifact: None,
             past: None,
             converge_task: None,
+            settings,
         }
     }
 
@@ -84,7 +102,31 @@ impl App {
         match key.code {
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => AppEvent::Quit,
             KeyCode::Char('q') => AppEvent::Quit,
-            KeyCode::Char('s') => AppEvent::ToSurface(Surface::Settings),
+            // Ctrl-S: save the Settings config to disk (no-op if Settings
+            // isn't open or no config state exists).
+            KeyCode::Char('s')
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && self.surface == Surface::Settings =>
+            {
+                if let Some(s) = self.settings.as_mut() {
+                    if let Err(e) = s.config.save() {
+                        s.test_status = Some(format!("save failed: {e}"));
+                    } else {
+                        s.test_status = Some("saved".to_string());
+                    }
+                }
+                AppEvent::None
+            }
+            // s: open Settings, populating the editor state from the TOML
+            // store on first entry.
+            KeyCode::Char('s') => {
+                if self.settings.is_none() {
+                    self.settings = Some(crate::surface::settings::SettingsState::from_config(
+                        crate::config::MrConfig::load(),
+                    ));
+                }
+                AppEvent::ToSurface(Surface::Settings)
+            }
             KeyCode::Enter if self.surface == Surface::Start => {
                 if !self.question.trim().is_empty() {
                     AppEvent::SubmitQuestion
@@ -203,16 +245,10 @@ impl App {
                     crate::surface::past::render_past(frame, frame.area(), ps, &self.theme);
                 }
             }
-            _ => {
-                // Placeholder until the remaining surfaces land (T11-T12).
-                frame.render_widget(
-                    ratatui::widgets::Paragraph::new(format!("surface: {:?}", self.surface)).block(
-                        ratatui::widgets::Block::default()
-                            .borders(ratatui::widgets::Borders::ALL)
-                            .title("MegaResearcher"),
-                    ),
-                    frame.area(),
-                );
+            Surface::Settings => {
+                if let Some(s) = self.settings.as_ref() {
+                    crate::surface::settings::render_settings(frame, frame.area(), s, &self.theme);
+                }
             }
         }
     }
