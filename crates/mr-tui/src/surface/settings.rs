@@ -20,11 +20,13 @@ impl SettingsState {
             .api_key
             .as_ref()
             .map(|k| {
-                if k.len() <= 8 {
-                    "•".repeat(k.len().max(1))
+                let char_count = k.chars().count();
+                if char_count <= 8 {
+                    "•".repeat(char_count.max(1))
                 } else {
-                    let prefix = &k[..8];
-                    format!("{prefix}{}", "•".repeat(k.len() - 8))
+                    let prefix: String = k.chars().take(8).collect();
+                    let bullets: String = k.chars().skip(8).map(|_| '•').collect();
+                    format!("{prefix}{bullets}")
                 }
             })
             .unwrap_or_default();
