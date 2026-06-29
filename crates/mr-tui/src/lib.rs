@@ -6,6 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0
 
 pub mod bootstrap;
+pub mod cost;
 pub mod figures;
 pub mod guard;
 pub mod theme;
