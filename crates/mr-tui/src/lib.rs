@@ -9,6 +9,7 @@ pub mod bootstrap;
 pub mod cost;
 pub mod figures;
 pub mod guard;
+pub mod io;
 pub mod theme;
 pub mod widget;
 
