@@ -16,6 +16,12 @@ pub async fn resolve_provider(
     provider_id: Option<String>,
     api_key: Option<String>,
 ) -> anyhow::Result<(Arc<dyn LlmProvider>, String)> {
+    // MrConfig (~/.config/mr/config.toml) is the first source — the TUI and
+    // headless `mr` share it. Explicit args override the config.
+    let mr_cfg = mr_tui::config::MrConfig::load();
+    let model = model.or(mr_cfg.model);
+    let provider_id = provider_id.or(mr_cfg.provider);
+    let api_key = api_key.or(mr_cfg.api_key);
     let settings = claurst_core::config::Settings::load_hierarchical(cwd).await;
     let mut config = settings.effective_config();
     if let Some(m) = model {

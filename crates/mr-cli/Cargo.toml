@@ -16,6 +16,9 @@ path = "src/main.rs"
 megaresearcher-research = { workspace = true }
 claurst-core = { workspace = true }
 claurst-api = { workspace = true }
+mr-tui = { workspace = true }
+dirs = { workspace = true }
+futures = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 tokio = { workspace = true }
 anyhow = { workspace = true }

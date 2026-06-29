@@ -150,10 +150,33 @@ pub async fn run_cli(args: Vec<String>) -> anyhow::Result<()> {
         println!("{}", usage());
         return Ok(());
     }
-    let cmd = parse_args(&args_refs).context("bad args")?;
     let cwd = std::env::current_dir()?;
-    let provider = prelude::resolve_provider(&cwd, None, None, None)
-        .await
-        .context("could not resolve a provider — set an API key (see claurst auth)")?;
+
+    // No subcommand → launch the TUI. (The TUI's Start/Past surfaces handle
+    // the runs-exist branch; settings auto-opens on first run.)
+    if args_refs.len() <= 1 {
+        return mr_tui::run(&cwd).await;
+    }
+
+    let cmd = parse_args(&args_refs).context("bad args")?;
+
+    // Lazy provider resolution: only the provider-needing commands resolve.
+    // List/Watch/Verify skip it entirely (fixes the 6a Important finding —
+    // `mr verify`/`list`/`watch` no longer need an API key).
+    let needs_provider = !matches!(
+        cmd,
+        Command::List | Command::Watch { .. } | Command::Verify { .. }
+    );
+    let provider = if needs_provider {
+        Some(
+            prelude::resolve_provider(&cwd, None, None, None)
+                .await
+                .context(
+                    "could not resolve a provider — set an API key (run `mr` to open settings)",
+                )?,
+        )
+    } else {
+        None
+    };
     commands::dispatch(cmd, cwd, provider).await
 }
