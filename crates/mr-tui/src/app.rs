@@ -344,7 +344,32 @@ impl App {
                                     plan_path: cs.plan_path.clone(),
                                 });
                                 self.converge_task = None;
-                                self.surface = Surface::Run;
+                                if let Some((p, m)) = self.provider.clone() {
+                                    let cfg = crate::config::MrConfig::load();
+                                    match crate::surface::run::spawn_run(
+                                        &self.cwd,
+                                        cs.spec_path.clone(),
+                                        cs.plan_path.clone(),
+                                        p,
+                                        m,
+                                        cfg.max_parallel,
+                                        cfg.mcp,
+                                    ) {
+                                        Ok((mut rs, task)) => {
+                                            rs.orch_task = Some(task);
+                                            self.run_state = Some(rs);
+                                            self.surface = Surface::Run;
+                                        }
+                                        Err(e) => {
+                                            cs.conversation
+                                                .push(format!("failed to start run: {e}"));
+                                        }
+                                    }
+                                } else {
+                                    cs.conversation.push(
+                                        "no provider configured — press s to open settings".into(),
+                                    );
+                                }
                             }
                             Ok(Ok(megaresearcher_research::phases::DriveOutcome::Approved {
                                 gates_passed,
